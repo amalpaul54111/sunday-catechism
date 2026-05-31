@@ -4,7 +4,7 @@
 import frappe
 from frappe.utils.pdf import get_pdf
 
-from sunday_catechism.utils import get_sundays, group_sundays_by_month, local_phone
+from sunday_catechism.utils import chunk_sundays, get_sundays, local_phone
 
 TEMPLATE = "sunday_catechism/sunday_catechism/print/attendance_register.html"
 
@@ -47,6 +47,11 @@ def generate_register(class_name: str, academic_year: str) -> None:
 
 	sundays = get_sundays(ay.start_date, ay.end_date)
 
+	# Width for the "Name of Student" column, sized to the longest name (the fixed table
+	# layout can't auto-size, so we derive it: ~5px/char at the 8px font + padding, clamped).
+	max_name_len = max((len(s["full_name"] or "") for s in students), default=12)
+	name_col_px = min(max(max_name_len, 10), 28) * 5 + 8
+
 	html = frappe.render_template(
 		TEMPLATE,
 		{
@@ -55,7 +60,8 @@ def generate_register(class_name: str, academic_year: str) -> None:
 			"academic_year": ay.academic_year,
 			"students": students,
 			"sundays": sundays,
-			"months": group_sundays_by_month(sundays),
+			"internal_pages": chunk_sundays(sundays),
+			"name_col_px": name_col_px,
 		},
 	)
 

@@ -229,29 +229,29 @@
 		</table>
 	</div>
 
-	{#- 3. INTERNALS — one landscape page per month -#}
-	{% for m in months %}
+	{#- 3. INTERNALS — ~8-9 weeks per page (Holy Mass / Academics / Assembly per Sunday) -#}
+	{% for pg in internal_pages %}
 	<div class="page">
-		<div class="sheet-title">Internals &mdash; {{ m.label }} <small>&middot; {{ class_name }} &middot; {{ academic_year }}</small></div>
+		<div class="sheet-title">Internals &mdash; {{ pg.label }} <small>&middot; {{ class_name }} &middot; {{ academic_year }}</small></div>
 		<table class="reg">
 			<colgroup>
-				<col style="width: 3%;">    {#- No -#}
-				<col style="width: 5%;">    {#- Adm No -#}
-				<col style="width: 22%;">   {#- Name -#}
-				{% for s in m.sundays %}<col><col><col>{% endfor %}
+				<col style="width: 3%;">                  {#- No -#}
+				<col style="width: 5%;">                  {#- Adm No -#}
+				<col style="width: {{ name_col_px }}px;"> {#- Name (sized to longest name) -#}
+				{% for s in pg.sundays %}<col><col><col>{% endfor %}
 			</colgroup>
 			<thead>
 				<tr>
 					<th rowspan="2">No.</th>
 					<th rowspan="2">Adm No.</th>
 					<th rowspan="2">Name of Student</th>
-					{% for s in m.sundays %}<th class="c" colspan="3">{{ frappe.utils.formatdate(s, "d-MMM-yy") }}</th>{% endfor %}
+					{% for s in pg.sundays %}<th class="c" colspan="3">{{ frappe.utils.formatdate(s, "d-MMM-yy") }}</th>{% endfor %}
 				</tr>
 				<tr>
-					{% for s in m.sundays %}
-						<th class="c">Holy Mass</th>
-						<th class="c">Academics</th>
-						<th class="c">Assembly</th>
+					{% for s in pg.sundays %}
+						<th class="sun">{{ vtext("Holy Mass") }}</th>
+						<th class="sun">{{ vtext("Academics") }}</th>
+						<th class="sun">{{ vtext("Assembly") }}</th>
 					{% endfor %}
 				</tr>
 			</thead>
@@ -261,7 +261,7 @@
 					<td class="c">{{ loop.index }}</td>
 					<td class="c">{{ st.admission_no }}</td>
 					<td>{{ st.full_name }}</td>
-					{% for s in m.sundays %}<td></td><td></td><td></td>{% endfor %}
+					{% for s in pg.sundays %}<td></td><td></td><td></td>{% endfor %}
 				</tr>
 				{% endfor %}
 			</tbody>

@@ -1,8 +1,6 @@
 # Copyright (c) 2026, amal@zimplify.tech and contributors
 # For license information, please see license.txt
 
-from collections import OrderedDict
-
 from frappe.utils import add_days, formatdate, getdate
 
 
@@ -36,17 +34,31 @@ def local_phone(phone):
 	return phone
 
 
-def group_sundays_by_month(sundays):
-	"""Group an ordered Sunday list into ordered month buckets for per-month layout.
+def chunk_sundays(sundays, max_per_page=9):
+	"""Split an ordered Sunday list into balanced consecutive chunks for the internals pages.
 
-	Returns a list of dicts so templates can iterate deterministically::
+	Each chunk holds at most ``max_per_page`` weeks; the chunks are sized as evenly as
+	possible (e.g. 37 Sundays -> five pages of 8/8/7/7/7). Returns a list of dicts::
 
-	    [{"key": "2026-05", "label": "May 2026", "sundays": [date, ...]}, ...]
+	    [{"sundays": [date, ...], "label": "31-May-26 – 26-Jul-26"}, ...]
 	"""
-	groups = OrderedDict()
-	for d in sundays:
-		key = f"{d.year}-{d.month:02d}"
-		if key not in groups:
-			groups[key] = {"key": key, "label": formatdate(d, "MMMM yyyy"), "sundays": []}
-		groups[key]["sundays"].append(d)
-	return list(groups.values())
+	n = len(sundays)
+	if not n:
+		return []
+
+	pages = -(-n // max_per_page)  # ceil division, no math import
+	base, rem = divmod(n, pages)
+
+	chunks = []
+	i = 0
+	for p in range(pages):
+		size = base + (1 if p < rem else 0)
+		group = sundays[i : i + size]
+		i += size
+		chunks.append(
+			{
+				"sundays": group,
+				"label": f"{formatdate(group[0], 'd-MMM-yy')} – {formatdate(group[-1], 'd-MMM-yy')}",
+			}
+		)
+	return chunks
