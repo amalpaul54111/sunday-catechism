@@ -94,27 +94,21 @@
 		</div>
 	</div>
 
-	{#- 2. ATTENDANCE MASTER SHEET — spread across two landscape pages kept side by side -#}
-	{%- set half = (sundays | length + 1) // 2 -%}
-	{%- set first_half = sundays[:half] -%}
-	{%- set second_half = sundays[half:] -%}
-
-	{#- 2a. Page 1: full student details + first half of Sundays -#}
+	{#- 2. STUDENT DETAILS — full-width bio-data on its own page -#}
 	<div class="page">
-		<div class="sheet-title">Attendance Register <small>(Page 1 of 2 &mdash; keep beside Page 2)</small> &mdash; <small>{{ class_name }} &middot; {{ academic_year }}</small></div>
+		<div class="sheet-title">Student Details &mdash; <small>{{ class_name }} &middot; {{ academic_year }}</small></div>
 		<table class="reg">
 			<colgroup>
-				<col style="width: 2.5%;">  {#- No -#}
-				<col style="width: 4%;">    {#- Adm No -#}
-				<col style="width: 12%;">   {#- Name -#}
-				<col style="width: 9%;">    {#- Address -#}
-				<col style="width: 6%;">    {#- Mobile -#}
-				<col style="width: 8%;">    {#- Father -#}
-				<col style="width: 8%;">    {#- Mother -#}
-				<col style="width: 5%;">    {#- DOB -#}
-				<col style="width: 6%;">    {#- Baptism Name -#}
-				<col style="width: 5%;">    {#- Baptism Date -#}
-				{% for s in first_half %}<col>{% endfor %}
+				<col style="width: 3%;">    {#- No -#}
+				<col style="width: 5%;">    {#- Adm No -#}
+				<col style="width: 16%;">   {#- Name -#}
+				<col style="width: 14%;">   {#- Address -#}
+				<col style="width: 9%;">    {#- Mobile -#}
+				<col style="width: 13%;">   {#- Father -#}
+				<col style="width: 13%;">   {#- Mother -#}
+				<col style="width: 8%;">    {#- DOB -#}
+				<col style="width: 11%;">   {#- Baptism Name -#}
+				<col style="width: 8%;">    {#- Baptism Date -#}
 			</colgroup>
 			<thead>
 				<tr>
@@ -128,7 +122,6 @@
 					<th>Date of Birth</th>
 					<th>Baptism Name</th>
 					<th>Date of Baptism</th>
-					{% for s in first_half %}<th class="sun">{{ vtext(frappe.utils.formatdate(s, "d-MMM-yy")) }}</th>{% endfor %}
 				</tr>
 			</thead>
 			<tbody>
@@ -144,6 +137,41 @@
 					<td class="c">{{ frappe.utils.formatdate(st.date_of_birth) if st.date_of_birth else "" }}</td>
 					<td>{{ st.baptism_name or "" }}</td>
 					<td class="c">{{ frappe.utils.formatdate(st.date_of_baptism) if st.date_of_baptism else "" }}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	{#- 3. ATTENDANCE GRID — lean (No/Adm/Name + dates), spread across two landscape pages kept side by side -#}
+	{%- set half = (sundays | length + 1) // 2 -%}
+	{%- set first_half = sundays[:half] -%}
+	{%- set second_half = sundays[half:] -%}
+
+	{#- 3a. Part 1: identity stub + first half of Sundays -#}
+	<div class="page">
+		<div class="sheet-title">Attendance Register <small>(Page 1 of 2 &mdash; keep beside Page 2)</small> &mdash; <small>{{ class_name }} &middot; {{ academic_year }}</small></div>
+		<table class="reg">
+			<colgroup>
+				<col style="width: 3%;">    {#- No -#}
+				<col style="width: 5%;">    {#- Adm No -#}
+				<col style="width: 14%;">   {#- Name -#}
+				{% for s in first_half %}<col>{% endfor %}
+			</colgroup>
+			<thead>
+				<tr>
+					<th>No.</th>
+					<th>Adm No.</th>
+					<th>Name of Student</th>
+					{% for s in first_half %}<th class="sun">{{ vtext(frappe.utils.formatdate(s, "d-MMM-yy")) }}</th>{% endfor %}
+				</tr>
+			</thead>
+			<tbody>
+				{% for st in students %}
+				<tr>
+					<td class="c">{{ loop.index }}</td>
+					<td class="c">{{ st.admission_no }}</td>
+					<td>{{ st.full_name }}</td>
 					{% for s in first_half %}<td></td>{% endfor %}
 				</tr>
 				{% endfor %}
@@ -151,19 +179,19 @@
 		</table>
 	</div>
 
-	{#- 2b. Page 2: identity stub + remaining Sundays + exam columns -#}
+	{#- 3b. Part 2: identity stub + remaining Sundays + exam columns -#}
 	<div class="page">
 		<div class="sheet-title">Attendance Register <small>(Page 2 of 2 &mdash; keep beside Page 1)</small> &mdash; <small>{{ class_name }} &middot; {{ academic_year }}</small></div>
 		<table class="reg">
 			<colgroup>
-				<col style="width: 2.5%;">  {#- No -#}
-				<col style="width: 4%;">    {#- Adm No -#}
-				<col style="width: 13%;">   {#- Name -#}
+				<col style="width: 3%;">    {#- No -#}
+				<col style="width: 5%;">    {#- Adm No -#}
+				<col style="width: 14%;">   {#- Name -#}
 				{% for s in second_half %}<col>{% endfor %}
 				<col><col><col>  {#- Half Yearly: Marks / Internal / Total -#}
 				<col><col><col>  {#- Final: Marks / Internal / Total -#}
-				<col style="width: 4%;">  {#- Total Marks -#}
-				<col style="width: 4%;">  {#- Pass / Fail -#}
+				<col style="width: 5%;">  {#- Total Marks -#}
+				<col style="width: 5%;">  {#- Pass / Fail -#}
 			</colgroup>
 			<thead>
 				<tr>
