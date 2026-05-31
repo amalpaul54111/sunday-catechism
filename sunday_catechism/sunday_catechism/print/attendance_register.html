@@ -1,0 +1,244 @@
+{#-
+	Catechism Attendance Register — landscape A4 PDF.
+	Sections: cover page, attendance master sheet, per-month internals sheets.
+	Context: class_name, teacher, academic_year, students[], sundays[], months[]
+
+	Note: this is rendered by wkhtmltopdf (patched Qt WebKit), which supports
+	neither CSS `writing-mode` nor `transform: rotate`. Vertical column headers are
+	therefore produced by stacking characters one-per-line (the `.v` spans below),
+	and all column widths are percentages summing to 100% so a wide table can never
+	overflow the page and get clipped (smart-shrinking is disabled by get_pdf).
+-#}
+<style>
+	/* Meta-CSS read by frappe/utils/pdf.py -> forces landscape A4 */
+	.print-format {
+		orientation: landscape;
+		page-size: A4;
+		margin-top: 8mm;
+		margin-bottom: 8mm;
+		margin-left: 8mm;
+		margin-right: 8mm;
+		font-family: "Helvetica Neue", Arial, sans-serif;
+		color: #1a1a1a;
+	}
+
+	.page { page-break-after: always; }
+	.page:last-child { page-break-after: auto; }
+
+	/* ---- Cover ---- */
+	.cover {
+		height: 178mm;
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		border: 6px double #8a6d3b;
+		background: linear-gradient(135deg, #fdfbf3 0%, #f3e9cf 55%, #e9dcb8 100%);
+		box-shadow: inset 0 0 0 10px #ffffff, inset 0 0 0 13px #c9a45a;
+		padding: 20mm;
+	}
+	.cover .diocese { font-size: 16px; letter-spacing: 3px; color: #8a6d3b; text-transform: uppercase; margin-bottom: 6mm; }
+	.cover .reg-title { font-size: 22px; color: #b23b2e; font-weight: 600; margin-bottom: 14mm; }
+	.cover h1 { font-size: 56px; margin: 0; color: #1f4e79; letter-spacing: 2px; }
+	.cover .class-label { font-size: 18px; color: #555; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 2mm; }
+	.cover .teacher { font-size: 30px; margin-top: 12mm; color: #2e2e2e; }
+	.cover .teacher small { display: block; font-size: 14px; letter-spacing: 3px; color: #888; text-transform: uppercase; margin-bottom: 1mm; }
+	.cover .year { font-size: 20px; margin-top: 10mm; color: #8a6d3b; font-weight: 600; }
+
+	/* ---- Register tables ---- */
+	.sheet-title { font-size: 13px; font-weight: 600; margin: 0 0 2mm; }
+	.sheet-title small { font-weight: 400; color: #666; }
+
+	/* Sized so up to ~24 students fit on one landscape page with comfortable rows. */
+	table.reg { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8px; }
+	table.reg th, table.reg td {
+		border: 1px solid #333;
+		padding: 2px 3px;
+		overflow: hidden;
+		line-height: 1.15;
+		vertical-align: middle;
+		word-wrap: break-word;
+	}
+	table.reg thead th { background: #f0f0f0; text-align: center; }
+	table.reg td { height: 7mm; }
+	table.reg td.c, table.reg th.c { text-align: center; }
+
+	/* Narrow columns with vertical (rotated, bottom-to-top) header text */
+	th.sun { padding: 1px 0; vertical-align: bottom; text-align: center; }
+	th.sun svg { display: block; margin: 0 auto; }
+</style>
+
+{#- Vertical header text, rotated 90° to read bottom-to-top. Rendered as inline
+	SVG because this wkhtmltopdf build supports neither CSS transform nor writing-mode;
+	the SVG renderer honours its own transform. `h` is the cell/label height in px. -#}
+{%- macro vtext(text, h=66) -%}
+	<svg width="14" height="{{ h }}" viewBox="0 0 14 {{ h }}"><text transform="translate(10,{{ h - 3 }}) rotate(-90)" font-size="9" font-family="Arial, sans-serif" fill="#1a1a1a">{{ text }}</text></svg>
+{%- endmacro -%}
+
+<div class="print-format">
+
+	{#- 1. COVER PAGE -#}
+	<div class="page">
+		<div class="cover">
+			<div class="diocese">Diocese of Irinjalakuda</div>
+			<div class="reg-title">Catechism Attendance Register</div>
+			<div class="class-label">Class</div>
+			<h1>{{ class_name }}</h1>
+			<div class="teacher">
+				<small>Teacher</small>
+				{{ teacher or "—" }}
+			</div>
+			<div class="year">Academic Year&nbsp;&nbsp;{{ academic_year }}</div>
+		</div>
+	</div>
+
+	{#- 2. ATTENDANCE MASTER SHEET — spread across two landscape pages kept side by side -#}
+	{%- set half = (sundays | length + 1) // 2 -%}
+	{%- set first_half = sundays[:half] -%}
+	{%- set second_half = sundays[half:] -%}
+
+	{#- 2a. Page 1: full student details + first half of Sundays -#}
+	<div class="page">
+		<div class="sheet-title">Attendance Register <small>(Page 1 of 2 &mdash; keep beside Page 2)</small> &mdash; <small>{{ class_name }} &middot; {{ academic_year }}</small></div>
+		<table class="reg">
+			<colgroup>
+				<col style="width: 2.5%;">  {#- No -#}
+				<col style="width: 4%;">    {#- Adm No -#}
+				<col style="width: 12%;">   {#- Name -#}
+				<col style="width: 9%;">    {#- Address -#}
+				<col style="width: 6%;">    {#- Mobile -#}
+				<col style="width: 8%;">    {#- Father -#}
+				<col style="width: 8%;">    {#- Mother -#}
+				<col style="width: 5%;">    {#- DOB -#}
+				<col style="width: 6%;">    {#- Baptism Name -#}
+				<col style="width: 5%;">    {#- Baptism Date -#}
+				{% for s in first_half %}<col>{% endfor %}
+			</colgroup>
+			<thead>
+				<tr>
+					<th>No.</th>
+					<th>Adm No.</th>
+					<th>Name of Student</th>
+					<th>Address</th>
+					<th>Mob. No.</th>
+					<th>Name of Father</th>
+					<th>Name of Mother</th>
+					<th>Date of Birth</th>
+					<th>Baptism Name</th>
+					<th>Date of Baptism</th>
+					{% for s in first_half %}<th class="sun">{{ vtext(frappe.utils.formatdate(s, "d-MMM-yy")) }}</th>{% endfor %}
+				</tr>
+			</thead>
+			<tbody>
+				{% for st in students %}
+				<tr>
+					<td class="c">{{ loop.index }}</td>
+					<td class="c">{{ st.admission_no }}</td>
+					<td>{{ st.full_name }}</td>
+					<td>{{ st.address or "" }}</td>
+					<td>{{ st.fathers_phone or "" }}</td>
+					<td>{{ st.name_of_father or "" }}</td>
+					<td>{{ st.name_of_mother or "" }}</td>
+					<td class="c">{{ frappe.utils.formatdate(st.date_of_birth) if st.date_of_birth else "" }}</td>
+					<td>{{ st.baptism_name or "" }}</td>
+					<td class="c">{{ frappe.utils.formatdate(st.date_of_baptism) if st.date_of_baptism else "" }}</td>
+					{% for s in first_half %}<td></td>{% endfor %}
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	{#- 2b. Page 2: identity stub + remaining Sundays + exam columns -#}
+	<div class="page">
+		<div class="sheet-title">Attendance Register <small>(Page 2 of 2 &mdash; keep beside Page 1)</small> &mdash; <small>{{ class_name }} &middot; {{ academic_year }}</small></div>
+		<table class="reg">
+			<colgroup>
+				<col style="width: 2.5%;">  {#- No -#}
+				<col style="width: 4%;">    {#- Adm No -#}
+				<col style="width: 13%;">   {#- Name -#}
+				{% for s in second_half %}<col>{% endfor %}
+				<col><col><col>  {#- Half Yearly: Marks / Internal / Total -#}
+				<col><col><col>  {#- Final: Marks / Internal / Total -#}
+				<col style="width: 4%;">  {#- Total Marks -#}
+				<col style="width: 4%;">  {#- Pass / Fail -#}
+			</colgroup>
+			<thead>
+				<tr>
+					<th rowspan="2">No.</th>
+					<th rowspan="2">Adm No.</th>
+					<th rowspan="2">Name of Student</th>
+					{% for s in second_half %}<th class="sun" rowspan="2">{{ vtext(frappe.utils.formatdate(s, "d-MMM-yy")) }}</th>{% endfor %}
+					<th class="c" colspan="3">Half Yearly Exam</th>
+					<th class="c" colspan="3">Final Exam</th>
+					<th class="sun" rowspan="2">{{ vtext("Total Marks") }}</th>
+					<th class="sun" rowspan="2">{{ vtext("Pass/Fail") }}</th>
+				</tr>
+				<tr>
+					<th class="sun">{{ vtext("Marks") }}</th>
+					<th class="sun">{{ vtext("Internal") }}</th>
+					<th class="sun">{{ vtext("Total") }}</th>
+					<th class="sun">{{ vtext("Marks") }}</th>
+					<th class="sun">{{ vtext("Internal") }}</th>
+					<th class="sun">{{ vtext("Total") }}</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for st in students %}
+				<tr>
+					<td class="c">{{ loop.index }}</td>
+					<td class="c">{{ st.admission_no }}</td>
+					<td>{{ st.full_name }}</td>
+					{% for s in second_half %}<td></td>{% endfor %}
+					<td></td><td></td><td></td>
+					<td></td><td></td><td></td>
+					<td></td><td></td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	{#- 3. INTERNALS — one landscape page per month -#}
+	{% for m in months %}
+	<div class="page">
+		<div class="sheet-title">Internals &mdash; {{ m.label }} <small>&middot; {{ class_name }} &middot; {{ academic_year }}</small></div>
+		<table class="reg">
+			<colgroup>
+				<col style="width: 3%;">    {#- No -#}
+				<col style="width: 5%;">    {#- Adm No -#}
+				<col style="width: 22%;">   {#- Name -#}
+				{% for s in m.sundays %}<col><col><col>{% endfor %}
+			</colgroup>
+			<thead>
+				<tr>
+					<th rowspan="2">No.</th>
+					<th rowspan="2">Adm No.</th>
+					<th rowspan="2">Name of Student</th>
+					{% for s in m.sundays %}<th class="c" colspan="3">{{ frappe.utils.formatdate(s, "d-MMM-yy") }}</th>{% endfor %}
+				</tr>
+				<tr>
+					{% for s in m.sundays %}
+						<th class="c">Holy Mass</th>
+						<th class="c">Academics</th>
+						<th class="c">Assembly</th>
+					{% endfor %}
+				</tr>
+			</thead>
+			<tbody>
+				{% for st in students %}
+				<tr>
+					<td class="c">{{ loop.index }}</td>
+					<td class="c">{{ st.admission_no }}</td>
+					<td>{{ st.full_name }}</td>
+					{% for s in m.sundays %}<td></td><td></td><td></td>{% endfor %}
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	{% endfor %}
+
+</div>
