@@ -62,7 +62,7 @@
 		word-wrap: break-word;
 	}
 	table.reg thead th { background: #f0f0f0; text-align: center; }
-	table.reg td { height: 7mm; }
+	table.reg td { height: 6.5mm; }
 	table.reg td.c, table.reg th.c { text-align: center; }
 
 	/* Narrow columns with vertical (rotated, bottom-to-top) header text */
@@ -73,9 +73,12 @@
 {#- Vertical header text, rotated 90° to read bottom-to-top. Rendered as inline
 	SVG because this wkhtmltopdf build supports neither CSS transform nor writing-mode;
 	the SVG renderer honours its own transform. `h` is the cell/label height in px. -#}
-{%- macro vtext(text, h=66) -%}
+{%- macro vtext(text, h=60) -%}
 	<svg width="14" height="{{ h }}" viewBox="0 0 14 {{ h }}"><text transform="translate(10,{{ h - 3 }}) rotate(-90)" font-size="9" font-family="Arial, sans-serif" fill="#1a1a1a">{{ text }}</text></svg>
 {%- endmacro -%}
+
+{#- N empty cells, used to build blank filler rows (for students who join mid-year). -#}
+{%- macro blanks(n) -%}{% for _ in range(n) %}<td></td>{% endfor %}{%- endmacro -%}
 
 <div class="print-format">
 
@@ -139,6 +142,9 @@
 					<td class="c">{{ frappe.utils.formatdate(st.date_of_baptism) if st.date_of_baptism else "" }}</td>
 				</tr>
 				{% endfor %}
+				{% for r in range(students | length + 1, total_rows + 1) %}
+				<tr><td class="c">{{ r }}</td>{{ blanks(9) }}</tr>
+				{% endfor %}
 			</tbody>
 		</table>
 	</div>
@@ -174,6 +180,9 @@
 					<td>{{ st.full_name }}</td>
 					{% for s in first_half %}<td></td>{% endfor %}
 				</tr>
+				{% endfor %}
+				{% for r in range(students | length + 1, total_rows + 1) %}
+				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(first_half | length) }}</tr>
 				{% endfor %}
 			</tbody>
 		</table>
@@ -225,6 +234,9 @@
 					<td></td><td></td>
 				</tr>
 				{% endfor %}
+				{% for r in range(students | length + 1, total_rows + 1) %}
+				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(second_half | length) }}{{ blanks(8) }}</tr>
+				{% endfor %}
 			</tbody>
 		</table>
 	</div>
@@ -263,6 +275,9 @@
 					<td>{{ st.full_name }}</td>
 					{% for s in pg.sundays %}<td></td><td></td><td></td>{% endfor %}
 				</tr>
+				{% endfor %}
+				{% for r in range(students | length + 1, total_rows + 1) %}
+				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(pg.sundays | length * 3) }}</tr>
 				{% endfor %}
 			</tbody>
 		</table>

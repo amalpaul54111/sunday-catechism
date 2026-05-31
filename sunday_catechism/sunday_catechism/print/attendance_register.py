@@ -8,6 +8,10 @@ from sunday_catechism.utils import chunk_sundays, get_sundays, local_phone
 
 TEMPLATE = "sunday_catechism/sunday_catechism/print/attendance_register.html"
 
+# Every sheet is padded to at least this many rows; the spare rows are left blank
+# (only the serial number is filled) so a mid-year joiner can be written in later.
+TARGET_ROWS = 24
+
 
 @frappe.whitelist()
 def generate_register(class_name: str, academic_year: str) -> None:
@@ -62,6 +66,7 @@ def generate_register(class_name: str, academic_year: str) -> None:
 			"sundays": sundays,
 			"internal_pages": chunk_sundays(sundays),
 			"name_col_px": name_col_px,
+			"total_rows": max(len(students), TARGET_ROWS),
 		},
 	)
 
