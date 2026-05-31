@@ -1,0 +1,178 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:admission_no",
+ "creation": "2026-05-31 10:31:55.634426",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "active",
+  "admission_no",
+  "class",
+  "column_break_jjpk",
+  "first_name",
+  "middle_name",
+  "last_name",
+  "full_name",
+  "section_break_jwdr",
+  "date_of_birth",
+  "name_of_father",
+  "fathers_phone",
+  "name_of_mother",
+  "mothers_phone",
+  "column_break_anfw",
+  "address",
+  "baptism_name",
+  "date_of_baptism"
+ ],
+ "fields": [
+  {
+   "fieldname": "admission_no",
+   "fieldtype": "Int",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "label": "Admission No",
+   "length": 4,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "class",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Class",
+   "options": "Class",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_jjpk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "label": "First Name",
+   "options": "Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "label": "Last Name"
+  },
+  {
+   "fieldname": "section_break_jwdr",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Address",
+   "reqd": 1
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth",
+   "reqd": 1
+  },
+  {
+   "fieldname": "name_of_father",
+   "fieldtype": "Data",
+   "label": "Name of Father",
+   "reqd": 1
+  },
+  {
+   "fieldname": "name_of_mother",
+   "fieldtype": "Data",
+   "label": "Name of Mother",
+   "reqd": 1
+  },
+  {
+   "fieldname": "baptism_name",
+   "fieldtype": "Data",
+   "label": "Baptism Name",
+   "not_nullable": 1,
+   "options": "Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "date_of_baptism",
+   "fieldtype": "Date",
+   "label": "Date of Baptism",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_anfw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "fathers_phone",
+   "fieldtype": "Phone",
+   "in_list_view": 1,
+   "label": "Father's Phone"
+  },
+  {
+   "fieldname": "mothers_phone",
+   "fieldtype": "Phone",
+   "label": "Mother's Phone"
+  },
+  {
+   "default": "1",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active"
+  },
+  {
+   "fieldname": "middle_name",
+   "fieldtype": "Data",
+   "label": "Middle Name"
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Full Name",
+   "read_only": 1,
+   "unique": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [
+  {
+   "link_doctype": "Student",
+   "link_fieldname": "full_name"
+  }
+ ],
+ "modified": "2026-05-31 13:20:43.282978",
+ "modified_by": "Administrator",
+ "module": "Sunday Catechism",
+ "name": "Student",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "show_title_field_in_link": 1,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "admission_no"
+}
