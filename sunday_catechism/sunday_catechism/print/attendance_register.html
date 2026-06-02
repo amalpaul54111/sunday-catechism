@@ -149,10 +149,14 @@
 		</table>
 	</div>
 
-	{#- 3. ATTENDANCE GRID — lean (No/Adm/Name + dates), spread across two landscape pages kept side by side -#}
-	{%- set half = (sundays | length + 1) // 2 -%}
-	{%- set first_half = sundays[:half] -%}
-	{%- set second_half = sundays[half:] -%}
+	{#- 3. ATTENDANCE GRID — lean (No/Adm/Name + dates), spread across two landscape pages kept side by side.
+	   Page 2 also carries 9 non-date narrow columns (Total Attendance + 6 exam sub-cols + Total Marks +
+	   Pass/Fail). Split the dates so BOTH pages end up with the same number of narrow columns, giving every
+	   column a uniform width across the two pages. -#}
+	{%- set exam_cols = 9 -%}
+	{%- set split = (sundays | length + exam_cols) // 2 -%}
+	{%- set first_half = sundays[:split] -%}
+	{%- set second_half = sundays[split:] -%}
 
 	{#- 3a. Part 1: identity stub + first half of Sundays -#}
 	<div class="page">
@@ -197,11 +201,11 @@
 				<col style="width: 5%;">    {#- Adm No -#}
 				<col style="width: 14%;">   {#- Name -#}
 				{% for s in second_half %}<col>{% endfor %}
-				<col style="width: 5%;">  {#- Total Attendance -#}
+				<col>  {#- Total Attendance -#}
 				<col><col><col>  {#- Half Yearly: Marks / Internal / Total -#}
 				<col><col><col>  {#- Final: Marks / Internal / Total -#}
-				<col style="width: 5%;">  {#- Total Marks -#}
-				<col style="width: 5%;">  {#- Pass / Fail -#}
+				<col>  {#- Total Marks -#}
+				<col>  {#- Pass / Fail -#}
 			</colgroup>
 			<thead>
 				<tr>
