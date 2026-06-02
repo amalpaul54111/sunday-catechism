@@ -62,6 +62,8 @@
 		word-wrap: break-word;
 	}
 	table.reg thead th { background: #f0f0f0; text-align: center; }
+	/* Blank, write-in heading cells (Additional Record page): tall + white so a heading can be hand-written */
+	table.reg th.writein { height: 14mm; background: #fff; }
 	table.reg td { height: 6.5mm; }
 	table.reg td.c, table.reg th.c { text-align: center; }
 
@@ -290,5 +292,81 @@
 		</table>
 	</div>
 	{% endfor %}
+
+	{#- 4. PARENT–TEACHER MEETING — both parents sign at each of the (up to two) meetings -#}
+	<div class="page">
+		<div class="sheet-title">Parent &ndash; Teacher Meeting <small>&middot; {{ class_name }} &middot; {{ academic_year }}</small></div>
+		<table class="reg">
+			<colgroup>
+				<col style="width: 4%;">    {#- No -#}
+				<col style="width: 6%;">    {#- Adm No -#}
+				<col style="width: 18%;">   {#- Name -#}
+				<col><col>  {#- First Meeting: Father's / Mother's signature -#}
+				<col><col>  {#- Second Meeting: Father's / Mother's signature -#}
+			</colgroup>
+			<thead>
+				<tr>
+					<th rowspan="2">No.</th>
+					<th rowspan="2">Adm No.</th>
+					<th rowspan="2">Name of Student</th>
+					<th class="c" colspan="2">First Meeting &mdash; Date: ______________</th>
+					<th class="c" colspan="2">Second Meeting &mdash; Date: ______________</th>
+				</tr>
+				<tr>
+					<th class="c">Father's Signature</th>
+					<th class="c">Mother's Signature</th>
+					<th class="c">Father's Signature</th>
+					<th class="c">Mother's Signature</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for st in students %}
+				<tr>
+					<td class="c">{{ loop.index }}</td>
+					<td class="c">{{ st.admission_no }}</td>
+					<td>{{ st.full_name }}</td>
+					<td></td><td></td><td></td><td></td>
+				</tr>
+				{% endfor %}
+				{% for r in range(students | length + 1, total_rows + 1) %}
+				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(4) }}</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	{#- 5. ADDITIONAL RECORD — student list with up to 6 blank, write-in column headings -#}
+	<div class="page">
+		<div class="sheet-title">Additional Record <small>&middot; {{ class_name }} &middot; {{ academic_year }}</small></div>
+		<table class="reg">
+			<colgroup>
+				<col style="width: 4%;">    {#- No -#}
+				<col style="width: 6%;">    {#- Adm No -#}
+				<col style="width: 18%;">   {#- Name -#}
+				<col><col><col><col><col><col>  {#- 6 write-in columns (share remaining width) -#}
+			</colgroup>
+			<thead>
+				<tr>
+					<th>No.</th>
+					<th>Adm No.</th>
+					<th>Name of Student</th>
+					{% for _ in range(6) %}<th class="writein"></th>{% endfor %}
+				</tr>
+			</thead>
+			<tbody>
+				{% for st in students %}
+				<tr>
+					<td class="c">{{ loop.index }}</td>
+					<td class="c">{{ st.admission_no }}</td>
+					<td>{{ st.full_name }}</td>
+					{{ blanks(6) }}
+				</tr>
+				{% endfor %}
+				{% for r in range(students | length + 1, total_rows + 1) %}
+				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(6) }}</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
 
 </div>
