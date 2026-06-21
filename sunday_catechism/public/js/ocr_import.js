@@ -47,51 +47,38 @@ frappe.provide("sunday_catechism.ocr");
 		list.page.add_inner_button(__("📷 Import from Photo"), () => open_ocr_dialog(list, doctype));
 	}
 
+	// Open the file/camera picker straight away (no intermediate "attach" dialog),
+	// then OCR the chosen image and route to the review form(s).
 	function open_ocr_dialog(listview, doctype) {
-		const dialog = new frappe.ui.Dialog({
-			title: __("Import {0} from Photo", [__(doctype)]),
-			fields: [
-				{
-					fieldtype: "Attach Image",
-					fieldname: "photo",
-					label: __("Photo of a form or register"),
-					reqd: 1,
-				},
-				{ fieldtype: "HTML", fieldname: "status" },
-			],
-			primary_action_label: __("Extract"),
-			primary_action(values) {
-				dialog.fields_dict.status.$wrapper.html(
-					`<p class="text-muted">${__(
-						"Reading the image locally… this can take 20–40 seconds."
-					)}</p>`
-				);
-				dialog.get_primary_btn().prop("disabled", true);
-
-				frappe.call({
-					method: "sunday_catechism.ocr.extract_documents",
-					args: { doctype: doctype, file_url: values.photo },
-					callback(r) {
-						dialog.hide();
-						const drafts = (r.message || []).filter(has_any_field);
-						if (!drafts.length) {
-							frappe.msgprint(__("No details could be read from that image."));
-							return;
-						}
-						if (drafts.length === 1) {
-							open_in_new_form(doctype, drafts[0]);
-						} else {
-							review_multiple(doctype, drafts, listview);
-						}
-					},
-					error() {
-						dialog.get_primary_btn().prop("disabled", false);
-						dialog.fields_dict.status.$wrapper.empty();
-					},
-				});
+		new frappe.ui.FileUploader({
+			allow_multiple: false,
+			restrictions: { allowed_file_types: ["image/*"] },
+			make_attachments_public: false,
+			on_success(file_doc) {
+				extract_and_review(doctype, file_doc.file_url, listview);
 			},
 		});
-		dialog.show();
+	}
+
+	function extract_and_review(doctype, file_url, listview) {
+		frappe.call({
+			method: "sunday_catechism.ocr.extract_documents",
+			args: { doctype: doctype, file_url: file_url },
+			freeze: true,
+			freeze_message: __("Reading the image… this can take 20–40 seconds."),
+			callback(r) {
+				const drafts = (r.message || []).filter(has_any_field);
+				if (!drafts.length) {
+					frappe.msgprint(__("No details could be read from that image."));
+					return;
+				}
+				if (drafts.length === 1) {
+					open_in_new_form(doctype, drafts[0]);
+				} else {
+					review_multiple(doctype, drafts, listview);
+				}
+			},
+		});
 	}
 
 	// A draft's real fields are every key that isn't an internal `_` marker.
