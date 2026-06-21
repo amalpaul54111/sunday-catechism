@@ -23,14 +23,13 @@ frappe.provide("sunday_catechism.ocr");
 				maybe_add_button();
 				// Form view: register a "Fill from Photo" button per enabled doctype.
 				state.doctypes.forEach((doctype) => {
-					frappe.ui.form.on(doctype, {
-						refresh(frm) {
-							frm.add_custom_button(__("📷 Fill from Photo"), () =>
-								open_form_ocr(frm)
-							);
-						},
-					});
+					frappe.ui.form.on(doctype, { refresh: add_form_ocr_button });
 				});
+				// The current form may have rendered before the handler registered
+				// (this runs after the async enabled-doctypes call), so add it now too.
+				if (window.cur_frm && state.doctypes.includes(cur_frm.doctype)) {
+					add_form_ocr_button(cur_frm);
+				}
 			})
 			.catch(() => {
 				/* OCR Settings not migrated yet, or no access — silently skip. */
@@ -91,6 +90,14 @@ frappe.provide("sunday_catechism.ocr");
 				}
 			},
 		});
+	}
+
+	// Add the form button (idempotent within a render; refresh clears + re-adds it).
+	function add_form_ocr_button(frm) {
+		if (!frm || !frm.page) return;
+		const label = __("📷 Fill from Photo");
+		if (frm.custom_buttons && frm.custom_buttons[label]) return;
+		frm.add_custom_button(label, () => open_form_ocr(frm));
 	}
 
 	// Form view: open the picker, OCR the image, and fill the OPEN record.
