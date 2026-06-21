@@ -82,7 +82,11 @@ function render_review(frm) {
 		return;
 	}
 
-	const head = [`<th style="width:32px">#</th>`, `<th style="width:64px">${__("Photo")}</th>`]
+	const head = [
+		`<th style="width:28px"></th>`,
+		`<th style="width:28px">#</th>`,
+		`<th style="width:64px">${__("Photo")}</th>`,
+	]
 		.concat(columns.map((c) => `<th>${frappe.utils.escape_html(c.label)}</th>`))
 		.join("");
 
@@ -98,10 +102,15 @@ function render_review(frm) {
 				   </a>`
 				: "";
 			const err = row._error
-				? `<div class="text-danger small mt-1">${frappe.utils.escape_html(row._error)}</div>`
+				? `<div class="text-danger small mt-1" style="white-space:normal">${frappe.utils.escape_html(
+						row._error
+				  )}</div>`
 				: "";
 			return `<tr data-photo="${frappe.utils.escape_html(row.photo || "")}">
-						<td class="text-muted">${i + 1}${err}</td>
+						<td class="text-center"><button class="btn btn-xs btn-link text-danger ocr-del-row" title="${__(
+							"Remove this row"
+						)}">&times;</button></td>
+						<td class="text-muted"><span class="ocr-rownum">${i + 1}</span>${err}</td>
 						<td>${photo}</td>${cells}
 					</tr>`;
 		})
@@ -114,12 +123,26 @@ function render_review(frm) {
 				<tbody>${body}</tbody>
 			</table>
 		</div>
-		<button class="btn btn-primary btn-sm ocr-create-btn">
-			${__("Create {0} Record(s)", [rows.length])}
-		</button>
+		<button class="btn btn-primary btn-sm ocr-create-btn"></button>
 	`);
 
+	update_create_count(wrapper);
 	wrapper.find(".ocr-create-btn").on("click", () => create_records(frm, columns));
+	wrapper.on("click", ".ocr-del-row", function () {
+		$(this).closest("tr").remove();
+		update_create_count(wrapper);
+	});
+}
+
+// Refresh the row numbers and the "Create N" button after rows are removed.
+function update_create_count(wrapper) {
+	const $rows = wrapper.find("tbody tr");
+	$rows.each((idx, tr) => $(tr).find(".ocr-rownum").text(idx + 1));
+	const n = $rows.length;
+	wrapper
+		.find(".ocr-create-btn")
+		.text(__("Create {0} Record(s)", [n]))
+		.prop("disabled", n === 0);
 }
 
 // Build an editable cell: a <select> for fields with a fixed option set
@@ -141,11 +164,12 @@ function cell_input(col, value) {
 				})
 			)
 			.join("");
-		return `<select class="form-control input-xs ocr-cell" data-field="${field}">${options}</select>`;
+		return `<select class="form-control input-xs ocr-cell" data-field="${field}" style="min-width:130px">${options}</select>`;
 	}
 
 	const type = col.type === "date" ? "date" : "text";
-	return `<input type="${type}" class="form-control input-xs ocr-cell" data-field="${field}" value="${frappe.utils.escape_html(
+	const width = col.type === "date" ? 140 : 170;
+	return `<input type="${type}" class="form-control input-xs ocr-cell" data-field="${field}" style="min-width:${width}px" value="${frappe.utils.escape_html(
 		val
 	)}">`;
 }
