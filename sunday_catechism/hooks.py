@@ -26,7 +26,8 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/sunday_catechism/css/sunday_catechism.css"
-# app_include_js = "/assets/sunday_catechism/js/sunday_catechism.js"
+# Adds the "Import from Photo" button to every doctype enabled in OCR Settings.
+app_include_js = "/assets/sunday_catechism/js/ocr_import.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/sunday_catechism/css/sunday_catechism.css"

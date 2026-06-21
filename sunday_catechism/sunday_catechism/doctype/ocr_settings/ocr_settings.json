@@ -1,0 +1,153 @@
+{
+ "actions": [],
+ "creation": "2026-06-21 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "engine",
+  "doctypes_section",
+  "enabled_doctypes",
+  "section_break_proc",
+  "max_image_dimension",
+  "ollama_section",
+  "ollama_url",
+  "ollama_model",
+  "column_break_oll",
+  "ollama_timeout",
+  "prompt_template",
+  "paddle_section",
+  "paddle_lang",
+  "paddle_use_gpu",
+  "tesseract_section",
+  "tesseract_lang"
+ ],
+ "fields": [
+  {
+   "default": "Ollama",
+   "description": "Ollama runs a local vision model (Qwen2.5-VL): best for handwriting and register tables. Tesseract and PaddleOCR are lighter classic OCR engines (weaker on handwriting) — use Tesseract on Python 3.14, where PaddleOCR has no wheels.",
+   "fieldname": "engine",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "OCR Engine",
+   "options": "Ollama\nTesseract\nPaddleOCR",
+   "reqd": 1
+  },
+  {
+   "fieldname": "doctypes_section",
+   "fieldtype": "Section Break",
+   "label": "Enabled DocTypes"
+  },
+  {
+   "description": "DocTypes that get an \"Import from Photo\" button on their list view. All OCR-eligible fields of each are read automatically.",
+   "fieldname": "enabled_doctypes",
+   "fieldtype": "Table",
+   "label": "Enabled DocTypes",
+   "options": "OCR Enabled DocType"
+  },
+  {
+   "fieldname": "section_break_proc",
+   "fieldtype": "Section Break",
+   "label": "Image Processing"
+  },
+  {
+   "default": "1600",
+   "description": "Longest edge (px) the image is downscaled to before OCR. Lower = faster, higher = more detail.",
+   "fieldname": "max_image_dimension",
+   "fieldtype": "Int",
+   "label": "Max Image Dimension"
+  },
+  {
+   "depends_on": "eval:doc.engine=='Ollama'",
+   "fieldname": "ollama_section",
+   "fieldtype": "Section Break",
+   "label": "Ollama"
+  },
+  {
+   "default": "http://ollama:11434",
+   "description": "Base URL of the Ollama server. Use the Docker service name in production (http://ollama:11434).",
+   "fieldname": "ollama_url",
+   "fieldtype": "Data",
+   "label": "Ollama URL"
+  },
+  {
+   "default": "qwen2.5vl:3b",
+   "description": "Vision model tag. Pull it once with: ollama pull qwen2.5vl:3b. Swap to qwen2.5vl:7b for better accuracy (slower, more RAM).",
+   "fieldname": "ollama_model",
+   "fieldtype": "Data",
+   "label": "Ollama Model"
+  },
+  {
+   "fieldname": "column_break_oll",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "120",
+   "description": "Seconds to wait for the model before giving up.",
+   "fieldname": "ollama_timeout",
+   "fieldtype": "Int",
+   "label": "Request Timeout (s)"
+  },
+  {
+   "description": "Optional extra instructions appended to the auto-generated extraction prompt sent to the vision model.",
+   "fieldname": "prompt_template",
+   "fieldtype": "Small Text",
+   "label": "Extra Prompt Instructions"
+  },
+  {
+   "depends_on": "eval:doc.engine=='PaddleOCR'",
+   "fieldname": "paddle_section",
+   "fieldtype": "Section Break",
+   "label": "PaddleOCR"
+  },
+  {
+   "default": "en",
+   "description": "Language code passed to PaddleOCR (e.g. en, ml, fr).",
+   "fieldname": "paddle_lang",
+   "fieldtype": "Data",
+   "label": "Language"
+  },
+  {
+   "default": "0",
+   "description": "Enable only if the bench host has a CUDA GPU and the GPU build of paddlepaddle is installed.",
+   "fieldname": "paddle_use_gpu",
+   "fieldtype": "Check",
+   "label": "Use GPU"
+  },
+  {
+   "depends_on": "eval:doc.engine=='Tesseract'",
+   "fieldname": "tesseract_section",
+   "fieldtype": "Section Break",
+   "label": "Tesseract"
+  },
+  {
+   "default": "eng",
+   "description": "Tesseract language code(s), e.g. eng, mal, or eng+mal. The matching language data pack must be installed.",
+   "fieldname": "tesseract_lang",
+   "fieldtype": "Data",
+   "label": "Language"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-06-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Sunday Catechism",
+ "name": "OCR Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
