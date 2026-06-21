@@ -18,22 +18,42 @@ frappe.provide("sunday_catechism.ocr");
 			.then((doctypes) => {
 				state.doctypes = doctypes || [];
 				if (!state.doctypes.length) return;
-				// List view: add on every route change, and once for the current view.
-				frappe.router.on("change", maybe_add_button);
-				maybe_add_button();
-				// Form view: register a "Fill from Photo" button per enabled doctype.
+				// Attach on every route change (list + form), and once for the
+				// current view (covers a hard refresh landing straight on a form).
+				frappe.router.on("change", on_route_change);
+				on_route_change();
+				// Also re-add the form button on form refresh (after save / reload,
+				// which clears custom buttons).
 				state.doctypes.forEach((doctype) => {
 					frappe.ui.form.on(doctype, { refresh: add_form_ocr_button });
 				});
-				// The current form may have rendered before the handler registered
-				// (this runs after the async enabled-doctypes call), so add it now too.
-				if (window.cur_frm && state.doctypes.includes(cur_frm.doctype)) {
-					add_form_ocr_button(cur_frm);
-				}
 			})
 			.catch(() => {
 				/* OCR Settings not migrated yet, or no access — silently skip. */
 			});
+	}
+
+	function on_route_change() {
+		maybe_add_button();
+		maybe_add_form_button();
+	}
+
+	// On a Form route (new or existing) for an enabled doctype, add the form button.
+	function maybe_add_form_button() {
+		const route = frappe.get_route();
+		if (!route || route[0] !== "Form") return;
+		const doctype = route[1];
+		if (!state.doctypes.includes(doctype)) return;
+		attach_form_when_ready(doctype, 0);
+	}
+
+	function attach_form_when_ready(doctype, tries) {
+		const frm = window.cur_frm;
+		if (!frm || frm.doctype !== doctype || !frm.page) {
+			if (tries < 25) setTimeout(() => attach_form_when_ready(doctype, tries + 1), 200);
+			return;
+		}
+		add_form_ocr_button(frm);
 	}
 
 	// On a List route for an enabled doctype, attach the button once cur_list is ready.
