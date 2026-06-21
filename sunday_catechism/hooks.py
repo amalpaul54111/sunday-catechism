@@ -147,15 +147,6 @@ app_include_js = "/assets/sunday_catechism/js/ocr_import.js"
 # 	}
 # }
 
-doc_events = {
-	"Data Import": {
-		# After an OCR Bulk Import's Data Import finishes, attach each source photo
-		# to the record it created (native attachment — no per-doctype field needed).
-		# on_change fires on the importer's db_set("status", ...) at completion.
-		"on_change": "sunday_catechism.sunday_catechism.doctype.ocr_bulk_import.ocr_bulk_import.attach_bulk_import_photos",
-	},
-}
-
 # Scheduled Tasks
 # ---------------
 

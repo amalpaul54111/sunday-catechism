@@ -13,9 +13,7 @@ frappe.ui.form.on("OCR Bulk Import", {
 		frappe.realtime.on("ocr_bulk_progress", (data) => {
 			if (!data || data.name !== frm.doc.name) return;
 			if (data.status === "Extracting") {
-				frm.dashboard.set_headline(
-					__("Extracting… {0} / {1} photos", [data.done, data.total])
-				);
+				frm.dashboard.set_headline(__("Extracting… {0} / {1} photos", [data.done, data.total]));
 			} else {
 				frm.reload_doc();
 			}
@@ -39,40 +37,149 @@ frappe.ui.form.on("OCR Bulk Import", {
 			});
 		});
 
-		if (frm.doc.status !== "Extracting") {
-			frm.add_custom_button(__("Extract & Build Import"), () => {
+		const can_extract = !["Extracting", "Ready for Review"].includes(frm.doc.status);
+		if (can_extract) {
+			frm.add_custom_button(__("Extract"), () => {
 				if (frm.is_dirty()) {
 					frappe.show_alert({ message: __("Please save first."), indicator: "orange" });
 					return;
 				}
 				frm.call("start_extraction").then((r) => {
 					if (r && r.message) {
-						frappe.show_alert({
-							message: __("Extraction started in the background."),
-							indicator: "blue",
-						});
+						frappe.show_alert({ message: __("Extraction started…"), indicator: "blue" });
 						frm.reload_doc();
 					}
 				});
 			}).addClass("btn-primary");
 		}
 
-		if (frm.doc.data_import) {
-			frm.add_custom_button(__("Open Data Import to Review"), () => {
-				frappe.set_route("Form", "Data Import", frm.doc.data_import);
-			}).addClass("btn-primary");
-		}
-
-		// Headline status.
+		// Headline + editable review grid.
 		if (frm.doc.status === "Extracting") {
 			frm.dashboard.set_headline(__("Extracting photos… this runs in the background."));
-		} else if (frm.doc.status === "Ready for Review" && frm.doc.data_import) {
+		} else if (frm.doc.status === "Ready for Review") {
 			frm.dashboard.set_headline(
-				__(
-					"Extracted {0} record(s) from {1} photo(s) ({2} failed). Open the Data Import to review and create.",
-					[frm.doc.records_extracted, frm.doc.total_photos, frm.doc.photos_failed]
-				)
+				__("Review and edit the rows below, then click Create Records.")
 			);
+			render_review(frm);
 		}
 	},
 });
+
+function render_review(frm) {
+	const wrapper = frm.get_field("review").$wrapper;
+	wrapper.empty();
+
+	let parsed = {};
+	try {
+		parsed = JSON.parse(frm.doc.extracted_data || "{}");
+	} catch (e) {
+		// ignore
+	}
+	const columns = parsed.columns || [];
+	const rows = parsed.rows || [];
+	if (!rows.length) {
+		wrapper.html(`<p class="text-muted">${__("No rows to review.")}</p>`);
+		return;
+	}
+
+	const head = [`<th style="width:32px">#</th>`, `<th style="width:64px">${__("Photo")}</th>`]
+		.concat(columns.map((c) => `<th>${frappe.utils.escape_html(c.label)}</th>`))
+		.join("");
+
+	const body = rows
+		.map((row, i) => {
+			const values = row.values || {};
+			const cells = columns
+				.map((c) => `<td>${cell_input(c, values[c.fieldname])}</td>`)
+				.join("");
+			const photo = row.photo
+				? `<a href="${row.photo}" target="_blank" title="${__("Open photo")}">
+						<img src="${row.photo}" style="width:48px;height:48px;object-fit:cover;border-radius:4px">
+				   </a>`
+				: "";
+			const err = row._error
+				? `<div class="text-danger small mt-1">${frappe.utils.escape_html(row._error)}</div>`
+				: "";
+			return `<tr data-photo="${frappe.utils.escape_html(row.photo || "")}">
+						<td class="text-muted">${i + 1}${err}</td>
+						<td>${photo}</td>${cells}
+					</tr>`;
+		})
+		.join("");
+
+	wrapper.html(`
+		<div class="table-responsive" style="max-height:60vh;overflow:auto">
+			<table class="table table-bordered" style="font-size:12px;white-space:nowrap">
+				<thead><tr>${head}</tr></thead>
+				<tbody>${body}</tbody>
+			</table>
+		</div>
+		<button class="btn btn-primary btn-sm ocr-create-btn">
+			${__("Create {0} Record(s)", [rows.length])}
+		</button>
+	`);
+
+	wrapper.find(".ocr-create-btn").on("click", () => create_records(frm, columns));
+}
+
+// Build an editable cell: a <select> for fields with a fixed option set
+// (Select / small Link), a date input for dates, otherwise a text input.
+function cell_input(col, value) {
+	const field = frappe.utils.escape_html(col.fieldname);
+	const val = value == null ? "" : String(value);
+	const opts = (col.options || "")
+		.split("\n")
+		.map((o) => o.trim())
+		.filter(Boolean);
+
+	if (opts.length) {
+		const options = [`<option value=""></option>`]
+			.concat(
+				opts.map((o) => {
+					const e = frappe.utils.escape_html(o);
+					return `<option value="${e}"${o === val ? " selected" : ""}>${e}</option>`;
+				})
+			)
+			.join("");
+		return `<select class="form-control input-xs ocr-cell" data-field="${field}">${options}</select>`;
+	}
+
+	const type = col.type === "date" ? "date" : "text";
+	return `<input type="${type}" class="form-control input-xs ocr-cell" data-field="${field}" value="${frappe.utils.escape_html(
+		val
+	)}">`;
+}
+
+function create_records(frm, columns) {
+	const rows = [];
+	frm.get_field("review").$wrapper.find("tbody tr").each(function () {
+		const $tr = $(this);
+		const values = {};
+		$tr.find(".ocr-cell").each(function () {
+			values[$(this).attr("data-field")] = $(this).val();
+		});
+		rows.push({ values: values, photo: $tr.attr("data-photo") || null });
+	});
+
+	frappe.confirm(
+		__("Create {0} record(s) in {1}? Rows that fail validation stay here to fix.", [
+			rows.length,
+			frm.doc.document_type,
+		]),
+		() => {
+			frm.call({
+				method: "create_records",
+				args: { rows: JSON.stringify(rows) },
+				freeze: true,
+				freeze_message: __("Creating records…"),
+			}).then((r) => {
+				const m = r.message || {};
+				frappe.show_alert({
+					message: __("Created {0}, {1} failed.", [m.created || 0, m.failed || 0]),
+					indicator: m.failed ? "orange" : "green",
+				});
+				frm.reload_doc();
+			});
+		}
+	);
+}

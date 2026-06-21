@@ -7,21 +7,21 @@
  "field_order": [
   "document_type",
   "status",
-  "column_break_top",
-  "data_import",
   "upload_section",
   "upload_help",
   "files",
   "zip_file",
+  "review_section",
+  "review",
   "status_section",
   "total_photos",
   "records_extracted",
   "column_break_stats",
+  "records_created",
   "photos_failed",
   "results_section",
   "results",
-  "source_photos",
-  "photos_attached"
+  "extracted_data"
  ],
  "fields": [
   {
@@ -43,18 +43,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_top",
-   "fieldtype": "Column Break"
-  },
-  {
-   "description": "The generated Data Import to review and run. Opens the standard import preview.",
-   "fieldname": "data_import",
-   "fieldtype": "Link",
-   "label": "Data Import (review here)",
-   "options": "Data Import",
-   "read_only": 1
-  },
-  {
    "fieldname": "upload_section",
    "fieldtype": "Section Break",
    "label": "Photos"
@@ -63,7 +51,7 @@
    "fieldname": "upload_help",
    "fieldtype": "HTML",
    "label": "Upload Help",
-   "options": "<p class=\"text-muted small\">Use <b>Upload Photos</b> to add images from your computer or phone (multi-select / camera), or attach a <b>ZIP</b> of images below. Then click <b>Extract &amp; Build Import</b>.</p>"
+   "options": "<p class=\"text-muted small\">Use <b>Upload Photos</b> to add images from your computer or phone (multi-select / camera), or attach a <b>ZIP</b> of images below. Then click <b>Extract</b>.</p>"
   },
   {
    "fieldname": "files",
@@ -76,6 +64,17 @@
    "fieldname": "zip_file",
    "fieldtype": "Attach",
    "label": "ZIP of Images"
+  },
+  {
+   "depends_on": "eval:doc.status=='Ready for Review'",
+   "fieldname": "review_section",
+   "fieldtype": "Section Break",
+   "label": "Review & Edit"
+  },
+  {
+   "fieldname": "review",
+   "fieldtype": "HTML",
+   "label": "Review"
   },
   {
    "collapsible": 1,
@@ -103,6 +102,13 @@
   },
   {
    "default": "0",
+   "fieldname": "records_created",
+   "fieldtype": "Int",
+   "label": "Records Created",
+   "read_only": 1
+  },
+  {
+   "default": "0",
    "fieldname": "photos_failed",
    "fieldtype": "Int",
    "label": "Photos Failed",
@@ -122,24 +128,17 @@
    "read_only": 1
   },
   {
-   "fieldname": "source_photos",
-   "fieldtype": "Long Text",
+   "fieldname": "extracted_data",
+   "fieldtype": "Code",
    "hidden": 1,
-   "label": "Source Photos",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "photos_attached",
-   "fieldtype": "Check",
-   "hidden": 1,
-   "label": "Photos Attached",
+   "label": "Extracted Data",
+   "options": "JSON",
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-06-21 19:00:00.000000",
+ "modified": "2026-06-21 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "Sunday Catechism",
  "name": "OCR Bulk Import",

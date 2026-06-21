@@ -3,11 +3,11 @@
 
 """OCR Bulk Import.
 
-Runs the photo OCR pipeline over many images in a background job, then builds a
-standard Frappe **Data Import** from the extracted rows so the user reviews and
-creates the records through the normal Data Import preview (validation, inline
-edit, mapping). After the import runs, each source photo is added to the record
-it created as a native file attachment (no per-doctype field required).
+Runs the photo OCR pipeline over many images in a background job and stores the
+extracted rows on the document. The user reviews and edits the values in an
+editable grid on the form, then "Create Records" validates and inserts each row,
+attaching the source photo to the record it creates as a native file attachment
+(no per-doctype field required).
 """
 
 import json
@@ -17,7 +17,6 @@ import zipfile
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils.xlsxutils import make_xlsx
 
 from sunday_catechism.ocr import base, extract_drafts
 
@@ -40,14 +39,13 @@ class OCRBulkImport(Document):
 			OCRBulkImportResult,
 		)
 
-		data_import: DF.Link | None
 		document_type: DF.Link
+		extracted_data: DF.Code | None
 		files: DF.Table[OCRBulkImportFile]
-		photos_attached: DF.Check
 		photos_failed: DF.Int
+		records_created: DF.Int
 		records_extracted: DF.Int
 		results: DF.Table[OCRBulkImportResult]
-		source_photos: DF.LongText | None
 		status: DF.Literal["Draft", "Extracting", "Ready for Review", "Completed", "Failed"]
 		total_photos: DF.Int
 		zip_file: DF.Attach | None
@@ -68,7 +66,6 @@ class OCRBulkImport(Document):
 			frappe.throw(_("Add some photos or a ZIP of images first."))
 
 		self.db_set("status", "Extracting")
-		self.db_set("data_import", None)
 		frappe.enqueue(
 			"sunday_catechism.sunday_catechism.doctype.ocr_bulk_import.ocr_bulk_import.run_extraction",
 			queue="long",
@@ -78,9 +75,51 @@ class OCRBulkImport(Document):
 		)
 		return True
 
+	@frappe.whitelist()
+	def create_records(self, rows):
+		"""Insert the (reviewed/edited) rows as records, attaching each source photo.
+
+		`rows` is a list of {"photo": url, "values": {fieldname: value}}. Returns a
+		summary; rows that fail validation are kept in `extracted_data` (with the
+		error) so the user can correct and retry.
+		"""
+		if not frappe.has_permission(self.document_type, "create"):
+			frappe.throw(
+				_("You are not allowed to create {0}.").format(self.document_type), frappe.PermissionError
+			)
+		rows = frappe.parse_json(rows)
+		created = 0
+		remaining = []
+
+		for row in rows:
+			values = {k: v for k, v in (row.get("values") or {}).items() if v not in (None, "")}
+			# Savepoint per row so one failure rolls back only its own changes,
+			# leaving already-created records intact.
+			frappe.db.savepoint("ocr_row")
+			try:
+				doc = frappe.new_doc(self.document_type)
+				doc.update(values)
+				doc.insert()
+				if row.get("photo"):
+					_attach_photo(self.document_type, doc.name, row["photo"])
+				created += 1
+			except Exception as e:
+				frappe.db.rollback(save_point="ocr_row")
+				row["_error"] = str(e)
+				remaining.append(row)
+
+		stored = frappe.parse_json(self.extracted_data or "{}")
+		stored["rows"] = remaining
+		self.extracted_data = json.dumps(stored)
+		self.records_created = (self.records_created or 0) + created
+		self.status = "Completed" if not remaining else "Ready for Review"
+		self.save(ignore_permissions=True)
+		frappe.db.commit()
+		return {"created": created, "failed": len(remaining)}
+
 
 def run_extraction(docname: str):
-	"""Background entry point: OCR every photo and build a Data Import for review."""
+	"""Background entry point: OCR every photo into editable rows on the document."""
 	doc = frappe.get_doc("OCR Bulk Import", docname)
 	try:
 		_extract_all(doc)
@@ -96,10 +135,13 @@ def _extract_all(doc):
 	settings = base.get_settings()
 	fields = base.get_ocr_fields(doc.document_type, settings)
 	fieldnames = [f["fieldname"] for f in fields]
+	columns = [
+		{"fieldname": f["fieldname"], "label": f["label"], "type": f["type"], "options": f.get("options")}
+		for f in fields
+	]
 
 	images = _collect_images(doc)
-	rows = [fieldnames]  # header
-	photo_per_row = []  # source photo url aligned with each data row of `rows`
+	data_rows = []
 	results = []
 	extracted = 0
 	failed = 0
@@ -112,8 +154,7 @@ def _extract_all(doc):
 				clean = {k: v for k, v in draft.items() if not k.startswith("_")}
 				if not clean:
 					continue
-				rows.append([clean.get(fn, "") for fn in fieldnames])
-				photo_per_row.append(file_url)
+				data_rows.append({"photo": file_url, "values": {fn: clean.get(fn) for fn in fieldnames}})
 				count += 1
 			results.append(
 				{
@@ -128,71 +169,16 @@ def _extract_all(doc):
 			results.append({"source_image": file_url, "status": "Error", "message": str(e)[:1000]})
 		_publish(doc.name, "Extracting", done=index + 1, total=len(images))
 
-	data_import = _build_data_import(doc.document_type, rows) if extracted else None
-
 	doc.reload()
 	doc.set("results", results)
 	doc.total_photos = len(images)
 	doc.records_extracted = extracted
 	doc.photos_failed = failed
-	doc.data_import = data_import
-	doc.source_photos = json.dumps(photo_per_row)
-	doc.photos_attached = 0
+	doc.extracted_data = json.dumps({"columns": columns, "rows": data_rows})
 	doc.status = "Ready for Review" if extracted else "Completed"
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()
 	_publish(doc.name, doc.status, done=len(images), total=len(images))
-
-
-def attach_bulk_import_photos(doc, method=None):
-	"""On Data Import completion, attach each source photo to the record it created.
-
-	Wired via doc_events on Data Import. Uses the Data Import Log (row -> docname)
-	to attach the right photo to each created record as a native file attachment —
-	so no per-doctype image field is needed. Idempotent via `photos_attached`.
-	"""
-	if doc.status not in ("Success", "Partial Success"):
-		return
-	bulk_name = frappe.db.get_value("OCR Bulk Import", {"data_import": doc.name}, "name")
-	if not bulk_name:
-		return
-	bulk = frappe.get_doc("OCR Bulk Import", bulk_name)
-	if bulk.photos_attached:
-		return
-
-	photos = json.loads(bulk.source_photos or "[]")
-	logs = frappe.get_all(
-		"Data Import Log",
-		filters={"data_import": doc.name, "success": 1},
-		fields=["row_indexes", "docname"],
-	)
-	for log in logs:
-		if not log.docname:
-			continue
-		# Header is sheet row 1, so the first data row is row 2 -> photo index 0.
-		photo_index = min(json.loads(log.row_indexes)) - 2
-		if 0 <= photo_index < len(photos):
-			_attach_photo(bulk.document_type, log.docname, photos[photo_index])
-
-	bulk.db_set("photos_attached", 1)
-	bulk.db_set("status", "Completed")
-
-
-def _attach_photo(doctype: str, docname: str, file_url: str):
-	"""Add `file_url` as a file attachment on the given record (once)."""
-	if frappe.db.exists(
-		"File", {"file_url": file_url, "attached_to_doctype": doctype, "attached_to_name": docname}
-	):
-		return
-	frappe.get_doc(
-		{
-			"doctype": "File",
-			"file_url": file_url,
-			"is_private": 1,
-			"attached_to_doctype": doctype,
-			"attached_to_name": docname,
-		}
-	).insert(ignore_permissions=True)
 
 
 def _collect_images(doc) -> list[str]:
@@ -231,27 +217,21 @@ def _collect_images(doc) -> list[str]:
 	return urls
 
 
-def _build_data_import(doctype: str, rows: list[list]) -> str:
-	"""Write the extracted rows to an xlsx and wrap it in a Data Import to review."""
-	xlsx = make_xlsx(rows, "OCR Import")
-	template = frappe.get_doc(
+def _attach_photo(doctype: str, docname: str, file_url: str):
+	"""Add `file_url` as a file attachment on the given record (once)."""
+	if frappe.db.exists(
+		"File", {"file_url": file_url, "attached_to_doctype": doctype, "attached_to_name": docname}
+	):
+		return
+	frappe.get_doc(
 		{
 			"doctype": "File",
-			"file_name": f"ocr-bulk-import-{frappe.generate_hash(length=8)}.xlsx",
+			"file_url": file_url,
 			"is_private": 1,
-			"content": xlsx.getvalue(),
+			"attached_to_doctype": doctype,
+			"attached_to_name": docname,
 		}
 	).insert(ignore_permissions=True)
-
-	data_import = frappe.get_doc(
-		{
-			"doctype": "Data Import",
-			"reference_doctype": doctype,
-			"import_type": "Insert New Records",
-			"import_file": template.file_url,
-		}
-	).insert(ignore_permissions=True)
-	return data_import.name
 
 
 def _publish(docname: str, status: str, done: int = 0, total: int = 0):
