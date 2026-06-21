@@ -36,7 +36,9 @@ frappe.provide("sunday_catechism.ocr");
 
 	function attach_when_ready(doctype, tries) {
 		const list = window.cur_list;
-		if (!list || list.doctype !== doctype) {
+		// cur_list can be present with the right doctype a moment before its
+		// `page` is built, so wait for that too — otherwise add_inner_button throws.
+		if (!list || list.doctype !== doctype || !list.page) {
 			if (tries < 25) setTimeout(() => attach_when_ready(doctype, tries + 1), 200);
 			return;
 		}
