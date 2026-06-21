@@ -76,12 +76,12 @@ class OCRBulkImport(Document):
 		return True
 
 	@frappe.whitelist()
-	def create_records(self, rows):
+	def create_records(self, rows: str):
 		"""Insert the (reviewed/edited) rows as records, attaching each source photo.
 
-		`rows` is a list of {"photo": url, "values": {fieldname: value}}. Returns a
-		summary; rows that fail validation are kept in `extracted_data` (with the
-		error) so the user can correct and retry.
+		`rows` is a JSON string of [{"photo": url, "values": {fieldname: value}}].
+		Returns a summary; rows that fail validation are kept in `extracted_data`
+		(with the error) so the user can correct and retry.
 		"""
 		if not frappe.has_permission(self.document_type, "create"):
 			frappe.throw(
