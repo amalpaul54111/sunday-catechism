@@ -192,6 +192,7 @@ function create_records(frm, columns) {
 		]),
 		() => {
 			frm.call({
+				doc: frm.doc,
 				method: "create_records",
 				args: { rows: JSON.stringify(rows) },
 				freeze: true,
