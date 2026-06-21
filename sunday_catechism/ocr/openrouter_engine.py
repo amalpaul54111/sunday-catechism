@@ -50,10 +50,22 @@ def extract(image_b64: str, settings, schema: dict, prompt: str, temperature: fl
 		resp = requests.post(
 			f"{url}/chat/completions", json=payload, headers=headers, timeout=timeout
 		)
-		resp.raise_for_status()
 	except requests.exceptions.RequestException as e:
+		frappe.throw(_("Could not reach OpenRouter at {0}. ({1})").format(url, str(e)))
+
+	if resp.status_code != 200:
+		# Surface OpenRouter's own message (e.g. a text-only model that can't take
+		# images, an unknown model id, or an auth/credit problem) rather than a
+		# generic HTTP error.
+		detail = resp.text[:300]
+		try:
+			detail = resp.json().get("error", {}).get("message") or detail
+		except ValueError:
+			pass
 		frappe.throw(
-			_("Could not reach OpenRouter at {0}. Check the API key and model. ({1})").format(url, str(e))
+			_("OpenRouter error ({0}): {1}. Note: the model must support image input (a vision model).").format(
+				resp.status_code, detail
+			)
 		)
 
 	try:
