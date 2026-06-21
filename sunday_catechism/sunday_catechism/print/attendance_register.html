@@ -151,80 +151,39 @@
 		</table>
 	</div>
 
-	{#- 3. ATTENDANCE GRID — lean (No/Adm/Name + dates), spread across two landscape pages kept side by side.
-	   Page 2 also carries 9 non-date narrow columns (Total Attendance + 6 exam sub-cols + Total Marks +
-	   Pass/Fail). Split the dates so BOTH pages end up with the same number of narrow columns, giving every
-	   column a uniform width across the two pages. -#}
-	{%- set exam_cols = 9 -%}
-	{%- set split = (sundays | length + exam_cols) // 2 -%}
-	{%- set first_half = sundays[:split] -%}
-	{%- set second_half = sundays[split:] -%}
-
-	{#- 3a. Part 1: identity stub + first half of Sundays -#}
+	{#- 3. ATTENDANCE GRID — one landscape page per term (split at the Academic Year's
+	   Term 1 End Date). Each page lists every student against the Sundays of that term, a
+	   Total Attendance column and that term's exam block (Marks / Internal / Total). The
+	   final term also carries the year-end summary (Total Marks / Pass-Fail). Sunday and
+	   exam columns are left unsized so they share the width left by the No/Adm/Name stub. -#}
+	{% for term in terms %}
+	{%- set narrow = (term.sundays | length) + 4 + (2 if term.is_last else 0) -%}
 	<div class="page">
-		<div class="sheet-title">Attendance Register <small>(Page 1 of 2 &mdash; keep beside Page 2)</small> &mdash; <small>{{ class_name }} &middot; {{ academic_year }}</small></div>
+		<div class="sheet-title">Attendance Register &mdash; {{ term.label }} <small>&middot; {{ class_name }} &middot; {{ academic_year }}</small></div>
 		<table class="reg">
 			<colgroup>
 				<col style="width: 3%;">    {#- No -#}
 				<col style="width: 5%;">    {#- Adm No -#}
 				<col style="width: 14%;">   {#- Name -#}
-				{% for s in first_half %}<col>{% endfor %}
-			</colgroup>
-			<thead>
-				<tr>
-					<th>No.</th>
-					<th>Adm No.</th>
-					<th>Name of Student</th>
-					{% for s in first_half %}<th class="sun">{{ vtext(frappe.utils.formatdate(s, "d-MMM-yy")) }}</th>{% endfor %}
-				</tr>
-			</thead>
-			<tbody>
-				{% for st in students %}
-				<tr>
-					<td class="c">{{ loop.index }}</td>
-					<td class="c">{{ st.admission_no }}</td>
-					<td>{{ st.full_name }}</td>
-					{% for s in first_half %}<td></td>{% endfor %}
-				</tr>
-				{% endfor %}
-				{% for r in range(students | length + 1, total_rows + 1) %}
-				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(first_half | length) }}</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-	</div>
-
-	{#- 3b. Part 2: identity stub + remaining Sundays + exam columns -#}
-	<div class="page">
-		<div class="sheet-title">Attendance Register <small>(Page 2 of 2 &mdash; keep beside Page 1)</small> &mdash; <small>{{ class_name }} &middot; {{ academic_year }}</small></div>
-		<table class="reg">
-			<colgroup>
-				<col style="width: 3%;">    {#- No -#}
-				<col style="width: 5%;">    {#- Adm No -#}
-				<col style="width: 14%;">   {#- Name -#}
-				{% for s in second_half %}<col>{% endfor %}
-				<col>  {#- Total Attendance -#}
-				<col><col><col>  {#- Half Yearly: Marks / Internal / Total -#}
-				<col><col><col>  {#- Final: Marks / Internal / Total -#}
-				<col>  {#- Total Marks -#}
-				<col>  {#- Pass / Fail -#}
+				{% for s in term.sundays %}<col>{% endfor %}
+				<col>            {#- Total Attendance -#}
+				<col><col><col>  {#- Exam: Marks / Internal / Total -#}
+				{% if term.is_last %}<col><col>{% endif %}  {#- Total Marks / Pass-Fail -#}
 			</colgroup>
 			<thead>
 				<tr>
 					<th rowspan="2">No.</th>
 					<th rowspan="2">Adm No.</th>
 					<th rowspan="2">Name of Student</th>
-					{% for s in second_half %}<th class="sun" rowspan="2">{{ vtext(frappe.utils.formatdate(s, "d-MMM-yy")) }}</th>{% endfor %}
+					{% for s in term.sundays %}<th class="sun" rowspan="2">{{ vtext(frappe.utils.formatdate(s, "d-MMM-yy")) }}</th>{% endfor %}
 					<th class="sun" rowspan="2">{{ vtext("Total Attendance", h=88) }}</th>
-					<th class="c" colspan="3">Half Yearly Exam</th>
-					<th class="c" colspan="3">Final Exam</th>
+					<th class="c" colspan="3">{{ term.exam }}</th>
+					{% if term.is_last %}
 					<th class="sun" rowspan="2">{{ vtext("Total Marks") }}</th>
 					<th class="sun" rowspan="2">{{ vtext("Pass/Fail") }}</th>
+					{% endif %}
 				</tr>
 				<tr>
-					<th class="sun">{{ vtext("Marks") }}</th>
-					<th class="sun">{{ vtext("Internal") }}</th>
-					<th class="sun">{{ vtext("Total") }}</th>
 					<th class="sun">{{ vtext("Marks") }}</th>
 					<th class="sun">{{ vtext("Internal") }}</th>
 					<th class="sun">{{ vtext("Total") }}</th>
@@ -236,19 +195,16 @@
 					<td class="c">{{ loop.index }}</td>
 					<td class="c">{{ st.admission_no }}</td>
 					<td>{{ st.full_name }}</td>
-					{% for s in second_half %}<td></td>{% endfor %}
-					<td></td>  {#- Total Attendance -#}
-					<td></td><td></td><td></td>
-					<td></td><td></td><td></td>
-					<td></td><td></td>
+					{{ blanks(narrow) }}
 				</tr>
 				{% endfor %}
 				{% for r in range(students | length + 1, total_rows + 1) %}
-				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(second_half | length) }}{{ blanks(9) }}</tr>
+				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(narrow) }}</tr>
 				{% endfor %}
 			</tbody>
 		</table>
 	</div>
+	{% endfor %}
 
 	{#- 3. INTERNALS — ~8-9 weeks per page (Holy Mass / Academics / Assembly per Sunday) -#}
 	{% for pg in internal_pages %}

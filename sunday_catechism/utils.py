@@ -34,6 +34,29 @@ def local_phone(phone):
 	return phone
 
 
+def split_terms(sundays, term_1_end_date=None):
+	"""Split an ordered Sunday list into two terms at ``term_1_end_date`` (inclusive).
+
+	Term 1 holds every Sunday on or before ``term_1_end_date``; Term 2 holds the rest.
+	When no split date is configured the weeks are divided as evenly as possible by
+	count, so an unconfigured academic year still prints two balanced term pages.
+
+	Returns ``(term_1_sundays, term_2_sundays)``.
+	"""
+	if not sundays:
+		return [], []
+
+	if term_1_end_date:
+		cutoff = getdate(term_1_end_date)
+		term1 = [s for s in sundays if s <= cutoff]
+		term2 = [s for s in sundays if s > cutoff]
+	else:
+		mid = -(-len(sundays) // 2)  # ceil division — first term gets the spare week
+		term1, term2 = sundays[:mid], sundays[mid:]
+
+	return term1, term2
+
+
 def chunk_sundays(sundays, max_per_page=9):
 	"""Split an ordered Sunday list into balanced consecutive chunks for the internals pages.
 

@@ -4,7 +4,7 @@
 import frappe
 from frappe.utils.pdf import get_pdf
 
-from sunday_catechism.utils import chunk_sundays, get_sundays, local_phone
+from sunday_catechism.utils import chunk_sundays, get_sundays, local_phone, split_terms
 
 TEMPLATE = "sunday_catechism/sunday_catechism/print/attendance_register.html"
 
@@ -51,6 +51,15 @@ def generate_register(class_name: str, academic_year: str) -> None:
 
 	sundays = get_sundays(ay.start_date, ay.end_date)
 
+	# The attendance grid prints one page per term, split at the Academic Year's
+	# Term 1 End Date. Each term page carries its own exam block; the last term also
+	# carries the year-end summary (Total Marks / Pass-Fail).
+	term_1_sundays, term_2_sundays = split_terms(sundays, ay.get("term_1_end_date"))
+	terms = [
+		{"label": "Term 1", "sundays": term_1_sundays, "exam": "Half Yearly Exam", "is_last": False},
+		{"label": "Term 2", "sundays": term_2_sundays, "exam": "Final Exam", "is_last": True},
+	]
+
 	# Width for the "Name of Student" column, sized to the longest name (the fixed table
 	# layout can't auto-size, so we derive it: ~5px/char at the 8px font + padding, clamped).
 	max_name_len = max((len(s["full_name"] or "") for s in students), default=12)
@@ -64,6 +73,7 @@ def generate_register(class_name: str, academic_year: str) -> None:
 			"academic_year": ay.academic_year,
 			"students": students,
 			"sundays": sundays,
+			"terms": terms,
 			"internal_pages": chunk_sundays(sundays),
 			"name_col_px": name_col_px,
 			"total_rows": max(len(students), TARGET_ROWS),

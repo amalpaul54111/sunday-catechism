@@ -19,11 +19,17 @@ class AcademicYear(Document):
 		end_date: DF.Date
 		is_default: DF.Check
 		start_date: DF.Date
+		term_1_end_date: DF.Date | None
 	# end: auto-generated types
 
 	def validate(self):
 		if getdate(self.end_date) <= getdate(self.start_date):
 			frappe.throw("End Date must be after Start Date")
+
+		if self.term_1_end_date and not (
+			getdate(self.start_date) < getdate(self.term_1_end_date) < getdate(self.end_date)
+		):
+			frappe.throw("Term 1 End Date must fall between the Start Date and End Date")
 
 		if self.is_default:
 			frappe.db.set_value(

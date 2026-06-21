@@ -9,6 +9,7 @@
  "field_order": [
   "academic_year",
   "start_date",
+  "term_1_end_date",
   "end_date",
   "is_default"
  ],
@@ -30,6 +31,13 @@
    "in_list_view": 1,
    "label": "Start Date (first Sunday)",
    "reqd": 1
+  },
+  {
+   "description": "Last Sunday of Term 1 (inclusive). The attendance register prints one page per term, splitting here: Term 2 runs from the following Sunday to the End Date. Leave blank to split evenly by week count.",
+   "fieldname": "term_1_end_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Term 1 End Date"
   },
   {
    "description": "Last Sunday / end of the academic year. The register's Sunday columns run up to this date.",
