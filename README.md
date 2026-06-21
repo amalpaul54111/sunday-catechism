@@ -80,8 +80,17 @@ and always returning the full recognised text. Use Ollama for handwriting.
 
 #### Setting up Ollama
 
-The `ollama` service is defined in `frappe_docker/compose.yaml`. Pull the model
-once (≈3 GB):
+This app ships a compose overlay that adds an `ollama` service. Merge it on top
+of frappe_docker's `compose.yaml`:
+
+```bash
+docker compose \
+  -f compose.yaml \
+  -f apps/sunday_catechism/docs/compose.ollama.yaml \
+  up -d
+```
+
+Then pull the model once (≈3 GB):
 
 ```bash
 docker compose exec ollama ollama pull qwen2.5vl:3b
@@ -94,7 +103,7 @@ bench (not the compose stack), install Ollama on the host, run
 
 On CPU expect ~20–40s per image. For better accuracy on messy handwriting,
 change the model to `qwen2.5vl:7b` in OCR Settings (slower, more RAM). A GPU
-opt-in is documented in `compose.yaml`.
+opt-in is documented in `docs/compose.ollama.yaml`.
 
 ### License
 
