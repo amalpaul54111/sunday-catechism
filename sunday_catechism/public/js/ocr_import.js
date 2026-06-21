@@ -1,8 +1,10 @@
 // Copyright (c) 2026, amal@zimplify.tech and contributors
 // For license information, please see license.txt
 //
-// Adds a generic "Import from Photo" button to the list view of every doctype
-// enabled in OCR Settings. Loaded on every desk page via `app_include_js`.
+// Adds a generic OCR button to every doctype enabled in OCR Settings:
+//  - list view: "Import from Photo" (creates new record(s));
+//  - form view: "Fill from Photo" (fills the open record from an image).
+// Loaded on every desk page via `app_include_js`.
 
 frappe.provide("sunday_catechism.ocr");
 
@@ -16,9 +18,19 @@ frappe.provide("sunday_catechism.ocr");
 			.then((doctypes) => {
 				state.doctypes = doctypes || [];
 				if (!state.doctypes.length) return;
-				// Add on every route change, and once for the current view.
+				// List view: add on every route change, and once for the current view.
 				frappe.router.on("change", maybe_add_button);
 				maybe_add_button();
+				// Form view: register a "Fill from Photo" button per enabled doctype.
+				state.doctypes.forEach((doctype) => {
+					frappe.ui.form.on(doctype, {
+						refresh(frm) {
+							frm.add_custom_button(__("📷 Fill from Photo"), () =>
+								open_form_ocr(frm)
+							);
+						},
+					});
+				});
 			})
 			.catch(() => {
 				/* OCR Settings not migrated yet, or no access — silently skip. */
@@ -76,6 +88,61 @@ frappe.provide("sunday_catechism.ocr");
 					open_in_new_form(doctype, drafts[0]);
 				} else {
 					review_multiple(doctype, drafts, listview);
+				}
+			},
+		});
+	}
+
+	// Form view: open the picker, OCR the image, and fill the OPEN record.
+	function open_form_ocr(frm) {
+		new frappe.ui.FileUploader({
+			allow_multiple: false,
+			restrictions: { allowed_file_types: ["image/*"] },
+			make_attachments_public: false,
+			on_success(file_doc) {
+				fill_form_from_photo(frm, file_doc.file_url);
+			},
+		});
+	}
+
+	function fill_form_from_photo(frm, file_url) {
+		frappe.call({
+			method: "sunday_catechism.ocr.extract_documents",
+			args: { doctype: frm.doctype, file_url: file_url },
+			freeze: true,
+			freeze_message: __("Reading the image… this can take 20–40 seconds."),
+			callback(r) {
+				const drafts = (r.message || []).filter(has_any_field);
+				if (!drafts.length) {
+					frappe.msgprint(__("No details could be read from that image."));
+					return;
+				}
+				const draft = drafts[0];
+				const values = clean_values(draft);
+				// Set only fields that exist on the form and aren't read-only, so a
+				// record's name/computed fields aren't clobbered.
+				Object.keys(values).forEach((fieldname) => {
+					const field = frm.fields_dict[fieldname];
+					if (field && !field.df.read_only) {
+						frm.set_value(fieldname, values[fieldname]);
+					}
+				});
+
+				const uncertain = draft._uncertain || [];
+				frappe.show_alert(
+					{
+						message: uncertain.length
+							? __("Filled from photo. Review these fields: {0}", [uncertain.join(", ")])
+							: __("Filled from photo. Review and save."),
+						indicator: uncertain.length ? "orange" : "green",
+					},
+					8
+				);
+				if (drafts.length > 1) {
+					frappe.show_alert(
+						{ message: __("{0} records were detected; filled from the first.", [drafts.length]), indicator: "blue" },
+						6
+					);
 				}
 			},
 		});
