@@ -10,10 +10,51 @@ app-side, so it works across models that don't support strict json_schema.
 """
 
 import json
+import re
 
 import frappe
 import requests
 from frappe import _
+
+
+def _extract_records(content: str):
+	"""Pull the record list out of a model's text reply, tolerantly.
+
+	Hosted models often ignore JSON mode: they wrap the JSON in ```markdown fences,
+	add prose, or return a bare array / single object instead of {"records": [...]}.
+	Returns a list of record dicts, or None if nothing JSON-like could be parsed.
+	"""
+	text = (content or "").strip()
+	if not text:
+		return None
+
+	# Strip a leading ```/```json fence and trailing ``` if present.
+	if text.startswith("```"):
+		text = re.sub(r"^```[a-zA-Z0-9]*\n?", "", text)
+		text = re.sub(r"\n?```$", "", text).strip()
+
+	data = None
+	try:
+		data = json.loads(text)
+	except ValueError:
+		# Fall back to the first JSON array or object embedded in the text.
+		for opener, closer in (("[", "]"), ("{", "}")):
+			start, end = text.find(opener), text.rfind(closer)
+			if start != -1 and end > start:
+				try:
+					data = json.loads(text[start : end + 1])
+					break
+				except ValueError:
+					continue
+
+	if data is None:
+		return None
+	if isinstance(data, list):
+		return data
+	if isinstance(data, dict):
+		records = data.get("records")
+		return records if isinstance(records, list) else [data]
+	return []
 
 
 def extract(image_b64: str, settings, schema: dict, prompt: str, temperature: float = 0) -> list[dict]:
@@ -70,9 +111,14 @@ def extract(image_b64: str, settings, schema: dict, prompt: str, temperature: fl
 
 	try:
 		content = resp.json()["choices"][0]["message"]["content"]
-		data = json.loads(content)
-	except (KeyError, IndexError, ValueError, TypeError):
-		frappe.throw(_("OpenRouter returned a response that could not be read as data."))
+	except (KeyError, IndexError, TypeError):
+		frappe.throw(_("OpenRouter returned an unexpected response shape."))
 
-	records = data.get("records") if isinstance(data, dict) else None
-	return records or []
+	records = _extract_records(content)
+	if records is None:
+		frappe.throw(
+			_("OpenRouter returned a response that could not be read as data: {0}").format(
+				(content or "")[:200]
+			)
+		)
+	return records
