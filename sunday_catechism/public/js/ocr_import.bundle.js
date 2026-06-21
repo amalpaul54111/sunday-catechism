@@ -96,7 +96,7 @@ frappe.provide("sunday_catechism.ocr");
 			method: "sunday_catechism.ocr.extract_documents",
 			args: { doctype: doctype, file_url: file_url },
 			freeze: true,
-			freeze_message: __("Reading the image… this can take 20–40 seconds."),
+			freeze_message: __("Reading the image… this can take 5–10 seconds."),
 			callback(r) {
 				const drafts = (r.message || []).filter(has_any_field);
 				if (!drafts.length) {
@@ -137,7 +137,7 @@ frappe.provide("sunday_catechism.ocr");
 			method: "sunday_catechism.ocr.extract_documents",
 			args: { doctype: frm.doctype, file_url: file_url },
 			freeze: true,
-			freeze_message: __("Reading the image… this can take 20–40 seconds."),
+			freeze_message: __("Reading the image… this can take 5–10 seconds."),
 			callback(r) {
 				const drafts = (r.message || []).filter(has_any_field);
 				if (!drafts.length) {
