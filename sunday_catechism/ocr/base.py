@@ -12,7 +12,6 @@ schema + prompt (Ollama) or a field list (PaddleOCR) and return raw drafts.
 import base64
 import io
 import re
-from collections import Counter
 
 import frappe
 
@@ -66,9 +65,8 @@ def get_settings():
 
 
 def get_enabled_doctypes(settings=None) -> list[str]:
-	"""DocTypes configured for OCR in OCR Settings (unfiltered by permission)."""
-	settings = settings or get_settings()
-	return [row.document_type for row in settings.enabled_doctypes if row.document_type]
+	"""DocTypes marked OCR-enabled in OCR DocType Config (unfiltered by permission)."""
+	return frappe.get_all("OCR DocType Config", filters={"enabled": 1}, pluck="document_type")
 
 
 def _link_options(link_doctype: str) -> str | None:
@@ -89,7 +87,15 @@ def _link_options(link_doctype: str) -> str | None:
 	return "\n".join(names) if names else None
 
 
-def get_ocr_fields(doctype: str) -> list[dict]:
+def get_field_mappings(doctype: str, settings=None) -> dict:
+	"""Per-field OCR overrides for `doctype`, keyed by fieldname (from OCR DocType Config)."""
+	if not frappe.db.exists("OCR DocType Config", doctype):
+		return {}
+	config = frappe.get_doc("OCR DocType Config", doctype)
+	return {row.fieldname: row for row in config.field_mappings if row.fieldname}
+
+
+def get_ocr_fields(doctype: str, settings=None) -> list[dict]:
 	"""Derive the OCR-eligible field list for a doctype from its meta.
 
 	Skips read-only/hidden/virtual fields, ineligible fieldtypes (Check, Table,
@@ -97,8 +103,13 @@ def get_ocr_fields(doctype: str) -> list[dict]:
 	target has a small, enumerable set of records (e.g. Class), with the valid
 	values carried in `options` so the model picks from them. Each entry carries the
 	coarse OCR `type`, the original `fieldtype`, and `options` (Select / Link).
+
+	Per-field overrides from OCR Settings' Field Mappings are then applied: a row can
+	exclude a field (`include` off), give the form's `alias` for it, mark it for the
+	`focus` pass (with a `focus_region`), and add an extraction `hint`.
 	"""
 	meta = frappe.get_meta(doctype)
+	mappings = get_field_mappings(doctype, settings)
 	fields = []
 	for df in meta.fields:
 		if df.fieldname in IGNORE_FIELDS:
@@ -116,15 +127,22 @@ def get_ocr_fields(doctype: str) -> list[dict]:
 		if not ocr_type:
 			continue
 
-		fields.append(
-			{
-				"fieldname": df.fieldname,
-				"label": df.label,
-				"type": ocr_type,
-				"fieldtype": df.fieldtype,
-				"options": options,
-			}
-		)
+		entry = {
+			"fieldname": df.fieldname,
+			"label": df.label,
+			"type": ocr_type,
+			"fieldtype": df.fieldtype,
+			"options": options,
+		}
+		mapping = mappings.get(df.fieldname)
+		if mapping:
+			if not mapping.include:
+				continue  # explicitly excluded
+			entry["alias"] = (mapping.alias or "").strip() or None
+			entry["hint"] = (mapping.hint or "").strip() or None
+			entry["focus"] = bool(mapping.focus)
+			entry["focus_region"] = mapping.focus_region or "Bottom"
+		fields.append(entry)
 	return fields
 
 
@@ -151,26 +169,30 @@ def build_schema(fields: list[dict]) -> dict:
 	}
 
 
+def _field_notes(f: dict) -> list[str]:
+	"""Per-field parenthetical notes for the prompt: type/options + mapping alias/hint."""
+	notes = []
+	if f["type"] in ("date", "datetime"):
+		notes.append("format YYYY-MM-DD")
+	elif f["type"] in ("int", "float"):
+		notes.append("a number")
+	elif f.get("options"):
+		notes.append("one of: " + ", ".join(o.strip() for o in f["options"].splitlines() if o.strip()))
+	if f.get("alias"):
+		notes.append(f"on the form it may be labelled '{f['alias']}'")
+	if f.get("hint"):
+		notes.append(f["hint"])
+	return notes
+
+
 def build_prompt(doctype: str, fields: list[dict], settings=None) -> str:
 	"""Generate the extraction prompt from the field list for `doctype`."""
 	lines = []
 	for f in fields:
-		if f["type"] in ("date", "datetime"):
-			hint = " (format YYYY-MM-DD)"
-		elif f["type"] in ("int", "float"):
-			hint = " (a number)"
-		elif f["options"]:
-			choices = ", ".join(o.strip() for o in f["options"].splitlines() if o.strip())
-			hint = f" (one of: {choices})"
-		else:
-			hint = ""
-		lines.append(f"- {f['label']} [{f['fieldname']}]{hint}")
-
-	prompt = DEFAULT_PROMPT_TEMPLATE.format(doctype=doctype, fields="\n".join(lines))
-	extra = ((settings or get_settings()).prompt_template or "").strip()
-	if extra:
-		prompt += "\n\nAdditional instructions:\n" + extra
-	return prompt
+		notes = _field_notes(f)
+		suffix = f" ({'; '.join(notes)})" if notes else ""
+		lines.append(f"- {f['label']} [{f['fieldname']}]{suffix}")
+	return DEFAULT_PROMPT_TEMPLATE.format(doctype=doctype, fields="\n".join(lines))
 
 
 def get_file_path(file_url: str) -> str:
@@ -233,7 +255,11 @@ def crop_region_b64(path: str, region: str = "Bottom", max_dimension: int = 2048
 
 def build_focus_prompt(doctype: str, fields: list[dict]) -> str:
 	"""Prompt for the focus pass: a zoomed crop, read only the given field(s)."""
-	lines = [f"- {f['label']} [{f['fieldname']}]" for f in fields]
+	lines = []
+	for f in fields:
+		notes = _field_notes(f)
+		suffix = f" ({'; '.join(notes)})" if notes else ""
+		lines.append(f"- {f['label']} [{f['fieldname']}]{suffix}")
 	return (
 		f"This image is a zoomed-in crop of part of a {doctype} form (e.g. an "
 		"'office use' box). Read ONLY the following field(s); the value may be "
@@ -255,51 +281,33 @@ def vision_extract(image_b64, settings, schema, prompt, temperature=0):
 
 
 def apply_focus_pass(doctype, path, settings, fields, drafts):
-	"""Re-read configured fields from a zoomed crop when the main pass left them empty.
+	"""Re-read focus fields from a zoomed crop when the main pass left them empty.
 
-	Only runs when exactly one record was found (a single form, not a register), so
-	the cropped region maps unambiguously to that record. Returns ``drafts`` mutated
-	in place. Ollama-only — relies on the vision model reading the crop.
+	Focus targets and their crop region come from the per-field Field Mappings (rows
+	with `focus` on). Only runs for a single record (one form, not a register) so the
+	crop maps unambiguously. Targets are grouped by region, so each region is cropped
+	and queried once, and only fields the main pass left empty are re-read. Returns
+	``drafts`` mutated in place.
 	"""
-	raw = (settings.get("focus_fields") or "").replace(",", "\n")
-	focus_names = {n.strip() for n in raw.splitlines() if n.strip()}
-	if not focus_names or len(drafts) != 1:
+	if len(drafts) != 1:
 		return drafts
-
-	# Only re-read focus fields the main pass left empty — if it already found them
-	# all, skip the (possibly several) extra model calls entirely.
 	draft = drafts[0]
-	subset = [
-		f
-		for f in fields
-		if f["fieldname"] in focus_names and draft.get(f["fieldname"]) in (None, "", "null")
-	]
-	if not subset:
+
+	by_region: dict = {}
+	for f in fields:
+		if f.get("focus") and draft.get(f["fieldname"]) in (None, "", "null"):
+			by_region.setdefault(f.get("focus_region") or "Bottom", []).append(f)
+	if not by_region:
 		return drafts
 
-	region = settings.get("focus_region") or "Bottom"
-	crop_b64 = crop_region_b64(path, region)
-	schema, prompt = build_schema(subset), build_focus_prompt(doctype, subset)
-
-	# Best-of-N self-consistency: with >1 vote, query the crop several times at a
-	# small temperature (so reads can vary) and take the most common non-null value
-	# per field. Null reads are ignored, so this mainly recovers recall — capturing
-	# a value whenever any vote reads it — while the majority guards against noise.
-	votes = max(1, int(settings.get("focus_votes") or 1))
-	temperature = 0 if votes == 1 else 0.3
-	tallies = {f["fieldname"]: Counter() for f in subset}
-	for _ in range(votes):
-		recs = vision_extract(crop_b64, settings, schema, prompt, temperature)
+	for region, subset in by_region.items():
+		crop_b64 = crop_region_b64(path, region)
+		recs = vision_extract(crop_b64, settings, build_schema(subset), build_focus_prompt(doctype, subset))
 		found = recs[0] if recs else {}
 		for f in subset:
 			value = found.get(f["fieldname"])
 			if value not in (None, "", "null"):
-				tallies[f["fieldname"]][str(value).strip()] += 1
-
-	for f in subset:
-		name = f["fieldname"]
-		if tallies[name]:
-			draft[name] = tallies[name].most_common(1)[0][0]
+				draft[f["fieldname"]] = value
 	return drafts
 
 

@@ -5,7 +5,7 @@
 from frappe.model.document import Document
 
 
-class OCREnabledDocType(Document):
+class OCRFieldMapping(Document):
 	# begin: auto-generated types
 	# This code is auto-generated. Do not modify anything in this block.
 
@@ -14,10 +14,15 @@ class OCREnabledDocType(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
-		document_type: DF.Link
+		alias: DF.Data | None
+		fieldname: DF.Data
+		focus: DF.Check
+		focus_region: DF.Literal["Bottom", "Top", "Left", "Right", "Bottom Right", "Top Right", "Whole"]
+		hint: DF.SmallText | None
+		include: DF.Check
 		parent: DF.Data
 		parentfield: DF.Data
 		parenttype: DF.Data
 	# end: auto-generated types
 
-	_DOCTYPE_NAME = "OCR Enabled DocType"
+	pass

@@ -5,8 +5,6 @@
  "engine": "InnoDB",
  "field_order": [
   "engine",
-  "doctypes_section",
-  "enabled_doctypes",
   "section_break_proc",
   "max_image_dimension",
   "ollama_section",
@@ -15,11 +13,6 @@
   "column_break_oll",
   "ollama_timeout",
   "ollama_num_ctx",
-  "prompt_template",
-  "focus_section",
-  "focus_fields",
-  "focus_region",
-  "focus_votes",
   "paddle_section",
   "paddle_url",
   "paddle_lang",
@@ -44,25 +37,13 @@
    "reqd": 1
   },
   {
-   "fieldname": "doctypes_section",
-   "fieldtype": "Section Break",
-   "label": "Enabled DocTypes"
-  },
-  {
-   "description": "DocTypes that get an \"Import from Photo\" button on their list view. All OCR-eligible fields of each are read automatically.",
-   "fieldname": "enabled_doctypes",
-   "fieldtype": "Table",
-   "label": "Enabled DocTypes",
-   "options": "OCR Enabled DocType"
-  },
-  {
    "fieldname": "section_break_proc",
    "fieldtype": "Section Break",
    "label": "Image Processing"
   },
   {
    "default": "2048",
-   "description": "Longest edge (px) the image is downscaled to before OCR. Lower = faster, higher = more detail (better for small/handwritten text). For Ollama, raising this also raises token usage — keep Context Window (num_ctx) above it.",
+   "description": "Longest edge (px) the image is downscaled to before OCR. Lower = faster, higher = more detail (better for small/handwritten text). For Ollama, raising this also raises token usage \u2014 keep Context Window (num_ctx) above it.",
    "fieldname": "max_image_dimension",
    "fieldtype": "Int",
    "label": "Max Image Dimension"
@@ -106,40 +87,10 @@
    "label": "Context Window (num_ctx)"
   },
   {
-   "description": "Optional extra instructions appended to the auto-generated extraction prompt sent to the vision model.",
-   "fieldname": "prompt_template",
-   "fieldtype": "Small Text",
-   "label": "Extra Prompt Instructions"
-  },
-  {
-   "depends_on": "eval:doc.engine=='Ollama'",
-   "fieldname": "focus_section",
+   "depends_on": "eval:doc.engine=='PaddleOCR'",
+   "fieldname": "paddle_section",
    "fieldtype": "Section Break",
-   "label": "Focus Pass (zoomed re-read)"
-  },
-  {
-   "depends_on": "eval:doc.engine=='Ollama'",
-   "description": "Fieldnames (one per line) to re-read from a zoomed crop when the full-page pass leaves them empty — useful for small handwritten values like an admission number in an office-use box. Leave blank to disable. Only applies to single-form images (not registers).",
-   "fieldname": "focus_fields",
-   "fieldtype": "Small Text",
-   "label": "Focus Fields"
-  },
-  {
-   "default": "Bottom",
-   "depends_on": "eval:doc.engine=='Ollama'",
-   "description": "Region of the form to zoom into for the focus pass.",
-   "fieldname": "focus_region",
-   "fieldtype": "Select",
-   "label": "Focus Region",
-   "options": "Bottom\nTop\nLeft\nRight\nBottom Right\nTop Right\nWhole"
-  },
-  {
-   "default": "1",
-   "depends_on": "eval:doc.engine=='Ollama'",
-   "description": "How many times to run the focus query; the most common value per field wins (best-of-N). 1 = single pass (fastest). 3 reads noisy handwriting far more consistently, at ~3x the focus-pass time.",
-   "fieldname": "focus_votes",
-   "fieldtype": "Int",
-   "label": "Focus Votes (best-of-N)"
+   "label": "PaddleOCR"
   },
   {
    "default": "http://paddleocr:8080",
@@ -213,7 +164,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-06-21 17:00:00.000000",
+ "modified": "2026-06-21 18:45:00.000000",
  "modified_by": "Administrator",
  "module": "Sunday Catechism",
  "name": "OCR Settings",

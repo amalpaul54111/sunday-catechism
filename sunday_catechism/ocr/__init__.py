@@ -40,7 +40,7 @@ def extract_documents(doctype: str, file_url: str) -> list[dict]:
 	if not frappe.has_permission(doctype, "create"):
 		frappe.throw(_("You are not allowed to create {0}.").format(doctype), frappe.PermissionError)
 
-	fields = base.get_ocr_fields(doctype)
+	fields = base.get_ocr_fields(doctype, settings)
 	if not fields:
 		frappe.throw(_("No OCR-eligible fields were found on {0}.").format(doctype))
 

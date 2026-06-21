@@ -14,19 +14,19 @@ class OCRSettings(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
-		from sunday_catechism.sunday_catechism.doctype.ocr_enabled_doctype.ocr_enabled_doctype import (
-			OCREnabledDocType,
-		)
-
-		enabled_doctypes: DF.Table[OCREnabledDocType]
-		engine: DF.Literal["Ollama", "Tesseract", "PaddleOCR"]
+		engine: DF.Literal["Ollama", "Tesseract", "PaddleOCR", "OpenRouter"]
 		max_image_dimension: DF.Int
 		ollama_model: DF.Data
+		ollama_num_ctx: DF.Int
 		ollama_timeout: DF.Int
 		ollama_url: DF.Data
+		openrouter_api_key: DF.Password | None
+		openrouter_model: DF.Data
+		openrouter_timeout: DF.Int
+		openrouter_url: DF.Data
 		paddle_lang: DF.Data
-		paddle_use_gpu: DF.Check
-		prompt_template: DF.SmallText | None
+		paddle_timeout: DF.Int
+		paddle_url: DF.Data
 		tesseract_lang: DF.Data
 	# end: auto-generated types
 

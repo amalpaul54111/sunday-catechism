@@ -76,10 +76,10 @@ class TestBuildSchema(unittest.TestCase):
 
 class TestBuildPrompt(unittest.TestCase):
 	def test_prompt_lists_fields_and_doctype(self):
-		prompt = build = base.build_prompt("Student", SAMPLE_FIELDS, _FakeSettings())
+		prompt = base.build_prompt("Student", SAMPLE_FIELDS)
 		self.assertIn("Student", prompt)
-		self.assertIn("[admission_no]", build)
-		self.assertIn("[date_of_birth]", build)
+		self.assertIn("[admission_no]", prompt)
+		self.assertIn("[date_of_birth]", prompt)
 
 
 class TestPaddleParse(unittest.TestCase):
@@ -112,14 +112,11 @@ class TestGetOcrFieldsAgainstMeta(unittest.TestCase):
 		self.assertIn("first_name", names)
 		self.assertIn("date_of_birth", names)
 		self.assertIn("admission_no", names)
-		# ...computed/read-only, Link and Check fields are excluded.
+		# ...small Link fields (enumerable options) like class are included too.
+		self.assertIn("class", names)  # Link to Class (few records)
+		# ...computed/read-only and Check fields are excluded.
 		self.assertNotIn("full_name", names)  # read_only
-		self.assertNotIn("class", names)  # Link
 		self.assertNotIn("active", names)  # Check
-
-
-class _FakeSettings:
-	prompt_template = ""
 
 
 if __name__ == "__main__":
