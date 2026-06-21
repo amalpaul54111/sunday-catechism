@@ -19,7 +19,7 @@ from sunday_catechism.ocr import base
 def extract(path: str, settings, fields: list[dict]) -> list[dict]:
 	try:
 		import pytesseract
-		from PIL import Image
+		from PIL import Image, ImageOps
 	except ImportError:
 		frappe.throw(
 			_(
@@ -32,6 +32,9 @@ def extract(path: str, settings, fields: list[dict]) -> list[dict]:
 	lang = settings.tesseract_lang or "eng"
 	try:
 		with Image.open(path) as img:
+			# Honour the photo's EXIF orientation — phone cameras store rotation in
+			# metadata, and OCR on the un-rotated pixels returns garbled text.
+			img = ImageOps.exif_transpose(img)
 			text = pytesseract.image_to_string(img, lang=lang)
 	except pytesseract.TesseractNotFoundError:
 		frappe.throw(

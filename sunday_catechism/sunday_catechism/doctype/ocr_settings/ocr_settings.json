@@ -14,22 +14,32 @@
   "ollama_model",
   "column_break_oll",
   "ollama_timeout",
+  "ollama_num_ctx",
   "prompt_template",
+  "focus_section",
+  "focus_fields",
+  "focus_region",
   "paddle_section",
+  "paddle_url",
   "paddle_lang",
-  "paddle_use_gpu",
+  "paddle_timeout",
   "tesseract_section",
-  "tesseract_lang"
+  "tesseract_lang",
+  "openrouter_section",
+  "openrouter_api_key",
+  "openrouter_model",
+  "openrouter_url",
+  "openrouter_timeout"
  ],
  "fields": [
   {
    "default": "Ollama",
-   "description": "Ollama runs a local vision model (Qwen2.5-VL): best for handwriting and register tables. Tesseract and PaddleOCR are lighter classic OCR engines (weaker on handwriting) — use Tesseract on Python 3.14, where PaddleOCR has no wheels.",
+   "description": "Ollama runs a local vision model (Qwen2.5-VL): best for handwriting and register tables. OpenRouter sends the image to a hosted vision model via API (needs an API key). Tesseract and PaddleOCR are lighter classic OCR engines (weaker on handwriting).",
    "fieldname": "engine",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "OCR Engine",
-   "options": "Ollama\nTesseract\nPaddleOCR",
+   "options": "Ollama\nTesseract\nPaddleOCR\nOpenRouter",
    "reqd": 1
   },
   {
@@ -50,8 +60,8 @@
    "label": "Image Processing"
   },
   {
-   "default": "1600",
-   "description": "Longest edge (px) the image is downscaled to before OCR. Lower = faster, higher = more detail.",
+   "default": "2048",
+   "description": "Longest edge (px) the image is downscaled to before OCR. Lower = faster, higher = more detail (better for small/handwritten text). For Ollama, raising this also raises token usage — keep Context Window (num_ctx) above it.",
    "fieldname": "max_image_dimension",
    "fieldtype": "Int",
    "label": "Max Image Dimension"
@@ -88,16 +98,46 @@
    "label": "Request Timeout (s)"
   },
   {
+   "default": "8192",
+   "description": "Context window (tokens) sent to Ollama. A vision model turns the image into many tokens; the Ollama default of 4096 overflows on higher-resolution photos and returns HTTP 400. Raise this if you raise Max Image Dimension.",
+   "fieldname": "ollama_num_ctx",
+   "fieldtype": "Int",
+   "label": "Context Window (num_ctx)"
+  },
+  {
    "description": "Optional extra instructions appended to the auto-generated extraction prompt sent to the vision model.",
    "fieldname": "prompt_template",
    "fieldtype": "Small Text",
    "label": "Extra Prompt Instructions"
   },
   {
-   "depends_on": "eval:doc.engine=='PaddleOCR'",
-   "fieldname": "paddle_section",
+   "depends_on": "eval:doc.engine=='Ollama'",
+   "fieldname": "focus_section",
    "fieldtype": "Section Break",
-   "label": "PaddleOCR"
+   "label": "Focus Pass (zoomed re-read)"
+  },
+  {
+   "depends_on": "eval:doc.engine=='Ollama'",
+   "description": "Fieldnames (one per line) to re-read from a zoomed crop when the full-page pass leaves them empty — useful for small handwritten values like an admission number in an office-use box. Leave blank to disable. Only applies to single-form images (not registers).",
+   "fieldname": "focus_fields",
+   "fieldtype": "Small Text",
+   "label": "Focus Fields"
+  },
+  {
+   "default": "Bottom",
+   "depends_on": "eval:doc.engine=='Ollama'",
+   "description": "Region of the form to zoom into for the focus pass.",
+   "fieldname": "focus_region",
+   "fieldtype": "Select",
+   "label": "Focus Region",
+   "options": "Bottom\nTop\nLeft\nRight\nBottom Right\nTop Right\nWhole"
+  },
+  {
+   "default": "http://paddleocr:8080",
+   "description": "Base URL of the PaddleOCR (PaddleX) serving sidecar. paddlepaddle has no Python 3.14 wheels, so PaddleOCR runs as a separate container reached over HTTP (see docs/compose.paddleocr.yaml). In a devcontainer use http://host.docker.internal:8080.",
+   "fieldname": "paddle_url",
+   "fieldtype": "Data",
+   "label": "PaddleOCR Service URL"
   },
   {
    "default": "en",
@@ -107,11 +147,11 @@
    "label": "Language"
   },
   {
-   "default": "0",
-   "description": "Enable only if the bench host has a CUDA GPU and the GPU build of paddlepaddle is installed.",
-   "fieldname": "paddle_use_gpu",
-   "fieldtype": "Check",
-   "label": "Use GPU"
+   "default": "120",
+   "description": "Seconds to wait for the PaddleOCR service before giving up.",
+   "fieldname": "paddle_timeout",
+   "fieldtype": "Int",
+   "label": "Request Timeout (s)"
   },
   {
    "depends_on": "eval:doc.engine=='Tesseract'",
@@ -125,12 +165,46 @@
    "fieldname": "tesseract_lang",
    "fieldtype": "Data",
    "label": "Language"
+  },
+  {
+   "depends_on": "eval:doc.engine=='OpenRouter'",
+   "fieldname": "openrouter_section",
+   "fieldtype": "Section Break",
+   "label": "OpenRouter"
+  },
+  {
+   "depends_on": "eval:doc.engine=='OpenRouter'",
+   "description": "Your OpenRouter API key (https://openrouter.ai/keys). Stored encrypted.",
+   "fieldname": "openrouter_api_key",
+   "fieldtype": "Password",
+   "label": "OpenRouter API Key"
+  },
+  {
+   "default": "qwen/qwen2.5-vl-72b-instruct",
+   "description": "OpenRouter model id (must support vision/images), e.g. qwen/qwen2.5-vl-72b-instruct, google/gemini-2.0-flash-001, openai/gpt-4o-mini.",
+   "fieldname": "openrouter_model",
+   "fieldtype": "Data",
+   "label": "OpenRouter Model"
+  },
+  {
+   "default": "https://openrouter.ai/api/v1",
+   "description": "OpenRouter API base URL (OpenAI-compatible).",
+   "fieldname": "openrouter_url",
+   "fieldtype": "Data",
+   "label": "OpenRouter API URL"
+  },
+  {
+   "default": "120",
+   "description": "Seconds to wait for OpenRouter before giving up.",
+   "fieldname": "openrouter_timeout",
+   "fieldtype": "Int",
+   "label": "Request Timeout (s)"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-06-21 10:00:00.000000",
+ "modified": "2026-06-21 16:30:00.000000",
  "modified_by": "Administrator",
  "module": "Sunday Catechism",
  "name": "OCR Settings",

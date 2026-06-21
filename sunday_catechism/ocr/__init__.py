@@ -50,17 +50,20 @@ def extract_documents(doctype: str, file_url: str) -> list[dict]:
 	if engine == "PaddleOCR":
 		from sunday_catechism.ocr import paddle_engine
 
-		drafts = paddle_engine.extract(path, settings, fields)
+		image_b64 = base.image_to_base64(path, settings.max_image_dimension or 1600)
+		drafts = paddle_engine.extract(image_b64, settings, fields)
 	elif engine == "Tesseract":
 		from sunday_catechism.ocr import tesseract_engine
 
 		drafts = tesseract_engine.extract(path, settings, fields)
 	else:
-		from sunday_catechism.ocr import ollama_engine
-
+		# Vision LLMs (Ollama, OpenRouter) — same flow, different backend.
 		image_b64 = base.image_to_base64(path, settings.max_image_dimension or 1600)
 		schema = base.build_schema(fields)
 		prompt = base.build_prompt(doctype, fields, settings)
-		drafts = ollama_engine.extract(image_b64, settings, schema, prompt)
+		drafts = base.vision_extract(image_b64, settings, schema, prompt)
+		# Second, zoomed pass for small fields the full-page pass tends to miss
+		# (e.g. a handwritten admission number in an office-use box).
+		drafts = base.apply_focus_pass(doctype, path, settings, fields, drafts)
 
 	return [base.normalize_draft(d, fields) for d in drafts]

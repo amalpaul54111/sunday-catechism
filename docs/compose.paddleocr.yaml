@@ -1,0 +1,37 @@
+# PaddleOCR overlay for the Sunday Catechism "Import from Photo" (OCR) feature.
+#
+# Runs the official PaddleX OCR serving (`paddlex --serve --pipeline OCR`) in its
+# own container, reached by the Frappe backend at http://paddleocr:8080 (the
+# default in OCR Settings). Only needed when the OCR engine is set to "PaddleOCR".
+# paddlepaddle has no Python 3.14 wheels, so it runs here (Python 3.12) instead
+# of the bench env.
+#
+# Usage — merge this overlay on top of frappe_docker's compose.yaml:
+#   docker compose \
+#     -f compose.yaml \
+#     -f apps/sunday_catechism/docs/compose.paddleocr.yaml \
+#     up -d --build
+#
+# The first /ocr request downloads the detection/recognition models (cached in
+# the paddleocr_models volume), so it is slower than later ones.
+#
+# If your Frappe container runs in a *different* compose project (e.g. a VS Code
+# devcontainer) and cannot resolve the `paddleocr` hostname, uncomment the
+# `ports` mapping below and set OCR Settings -> PaddleOCR Service URL to
+# http://host.docker.internal:8080 instead.
+
+services:
+  paddleocr:
+    build:
+      context: apps/sunday_catechism/docs/paddleocr
+    # paddlepaddle's ARM Linux build segfaults; force x86_64 (native on amd64
+    # hosts, emulated — slower but stable — on Apple Silicon / arm64 hosts).
+    platform: linux/amd64
+    restart: ${RESTART_POLICY:-unless-stopped}
+    volumes:
+      - paddleocr_models:/root/.paddlex
+    # ports:
+    #   - "8080:8080"
+
+volumes:
+  paddleocr_models:

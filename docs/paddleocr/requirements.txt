@@ -1,0 +1,3 @@
+paddlepaddle>=3.0.0
+paddleocr>=3.0.0
+paddlex[serving]>=3.0.0

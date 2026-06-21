@@ -18,12 +18,17 @@ def extract(image_b64: str, settings, schema: dict, prompt: str) -> list[dict]:
 	url = (settings.ollama_url or "http://ollama:11434").rstrip("/")
 	model = settings.ollama_model or "qwen2.5vl:3b"
 	timeout = settings.ollama_timeout or 120
+	# Vision models tokenise the image into many tokens. Ollama's default context is
+	# only 4096, which a higher-resolution photo overflows — the server then rejects
+	# the request with HTTP 400 ("exceeds the available context size"). Raise it so
+	# larger, more legible images fit (the model itself supports up to 128k).
+	num_ctx = settings.get("ollama_num_ctx") or 8192
 
 	payload = {
 		"model": model,
 		"stream": False,
 		"format": schema,
-		"options": {"temperature": 0},
+		"options": {"temperature": 0, "num_ctx": num_ctx},
 		"messages": [{"role": "user", "content": prompt, "images": [image_b64]}],
 	}
 

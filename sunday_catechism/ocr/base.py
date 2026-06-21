@@ -37,6 +37,11 @@ FIELDTYPE_TO_OCR = {
 # Eligible-by-type but never useful to OCR.
 IGNORE_FIELDS = {"naming_series", "amended_from"}
 
+# A Link field is offered to OCR (with its valid values enumerated) only when the
+# linked doctype has at most this many records — otherwise the option list is too
+# large to put in the prompt and OCR can't reliably pick from it.
+MAX_LINK_OPTIONS = 50
+
 _PHONE_RE = re.compile(r"(\+?\d[\d\s\-]{7,}\d)")
 
 DEFAULT_PROMPT_TEMPLATE = (
@@ -44,6 +49,9 @@ DEFAULT_PROMPT_TEMPLATE = (
 	"register/table listing several {doctype} records. Read it and extract the "
 	"details of every {doctype} you can find.\n"
 	"Return one object per record in the `records` array.\n"
+	"Scan the WHOLE page top to bottom, including headers, footers, margins and any "
+	"separate boxes such as 'For Office Use Only' — identifiers like admission/"
+	"registration numbers and dates are often handwritten in those side boxes.\n"
 	"Extract these fields (use null for anything you cannot read confidently — "
 	"never guess or invent a value):\n"
 	"{fields}\n"
@@ -62,30 +70,58 @@ def get_enabled_doctypes(settings=None) -> list[str]:
 	return [row.document_type for row in settings.enabled_doctypes if row.document_type]
 
 
+def _link_options(link_doctype: str) -> str | None:
+	"""Newline-joined valid values for a Link target, or None if unbounded/empty.
+
+	Returns None when the linked doctype is missing, empty, or has more than
+	``MAX_LINK_OPTIONS`` records (too many to enumerate in the prompt).
+	"""
+	if not link_doctype:
+		return None
+	try:
+		count = frappe.db.count(link_doctype)
+	except Exception:
+		return None
+	if not count or count > MAX_LINK_OPTIONS:
+		return None
+	names = frappe.get_all(link_doctype, pluck="name", order_by="name asc")
+	return "\n".join(names) if names else None
+
+
 def get_ocr_fields(doctype: str) -> list[dict]:
 	"""Derive the OCR-eligible field list for a doctype from its meta.
 
-	Skips read-only/hidden/virtual fields, ineligible fieldtypes (Link, Check,
-	Table, layout breaks, …) and a small ignore-list. Each entry carries the
-	coarse OCR `type`, the original `fieldtype`, and Select `options`.
+	Skips read-only/hidden/virtual fields, ineligible fieldtypes (Check, Table,
+	layout breaks, …) and a small ignore-list. Link fields are included when their
+	target has a small, enumerable set of records (e.g. Class), with the valid
+	values carried in `options` so the model picks from them. Each entry carries the
+	coarse OCR `type`, the original `fieldtype`, and `options` (Select / Link).
 	"""
 	meta = frappe.get_meta(doctype)
 	fields = []
 	for df in meta.fields:
 		if df.fieldname in IGNORE_FIELDS:
 			continue
-		if df.read_only or df.hidden or getattr(df, "is_virtual", 0):
+		if df.read_only or df.hidden or getattr(df, "is_virtual", 0) or not df.label:
 			continue
+
 		ocr_type = FIELDTYPE_TO_OCR.get(df.fieldtype)
-		if not ocr_type or not df.label:
+		options = df.options if df.fieldtype == "Select" else None
+		if df.fieldtype == "Link":
+			options = _link_options(df.options)
+			if not options:
+				continue  # unbounded or empty link target — not OCR-friendly
+			ocr_type = "str"
+		if not ocr_type:
 			continue
+
 		fields.append(
 			{
 				"fieldname": df.fieldname,
 				"label": df.label,
 				"type": ocr_type,
 				"fieldtype": df.fieldtype,
-				"options": df.options if df.fieldtype == "Select" else None,
+				"options": options,
 			}
 		)
 	return fields
@@ -94,7 +130,14 @@ def get_ocr_fields(doctype: str) -> list[dict]:
 def build_schema(fields: list[dict]) -> dict:
 	"""JSON schema handed to Ollama's `format` param to constrain the output."""
 	json_type = {"str": "string", "int": "integer", "float": "number", "date": "string", "datetime": "string"}
-	properties = {f["fieldname"]: {"type": [json_type[f["type"]], "null"]} for f in fields}
+	properties = {}
+	for f in fields:
+		prop = {"type": [json_type[f["type"]], "null"]}
+		choices = [o.strip() for o in (f.get("options") or "").splitlines() if o.strip()]
+		if choices:
+			# Constrain Select/Link fields to their valid values (plus null).
+			prop["enum"] = [*choices, None]
+		properties[f["fieldname"]] = prop
 	return {
 		"type": "object",
 		"properties": {
@@ -137,15 +180,107 @@ def get_file_path(file_url: str) -> str:
 
 def image_to_base64(path: str, max_dimension: int = 1600) -> str:
 	"""Downscale the image and return it as a base64 JPEG string for the model."""
-	from PIL import Image
+	from PIL import Image, ImageOps
 
 	with Image.open(path) as img:
+		# Honour the photo's EXIF orientation before anything else — phone cameras
+		# store rotation in metadata, and a sideways image OCRs to garbled text.
+		img = ImageOps.exif_transpose(img)
 		img = img.convert("RGB")
 		if max_dimension and max(img.size) > max_dimension:
 			img.thumbnail((max_dimension, max_dimension))
 		buffer = io.BytesIO()
 		img.save(buffer, format="JPEG", quality=85)
 	return base64.b64encode(buffer.getvalue()).decode("ascii")
+
+
+# Named crop regions (as fractional x1, y1, x2, y2 of the upright image) for the
+# focus pass — a second, zoomed query for small fields the full-page pass misses.
+_REGION_BOXES = {
+	"Bottom": (0.0, 0.58, 1.0, 1.0),
+	"Top": (0.0, 0.0, 1.0, 0.42),
+	"Left": (0.0, 0.0, 0.5, 1.0),
+	"Right": (0.5, 0.0, 1.0, 1.0),
+	"Bottom Right": (0.5, 0.55, 1.0, 1.0),
+	"Top Right": (0.5, 0.0, 1.0, 0.45),
+	"Whole": (0.0, 0.0, 1.0, 1.0),
+}
+
+
+def crop_region_b64(path: str, region: str = "Bottom", max_dimension: int = 2048) -> str:
+	"""Return a base64 JPEG of one region of the form, upscaled for detail.
+
+	Used by the focus pass: the region is cropped from the EXIF-corrected image and
+	scaled so its longest edge is ``max_dimension`` px, giving the vision model many
+	more pixels on small/handwritten text (e.g. an admission number in a side box).
+	"""
+	from PIL import Image, ImageOps
+
+	fx1, fy1, fx2, fy2 = _REGION_BOXES.get(region, _REGION_BOXES["Bottom"])
+	with Image.open(path) as img:
+		img = ImageOps.exif_transpose(img).convert("RGB")
+		w, h = img.size
+		crop = img.crop((int(w * fx1), int(h * fy1), int(w * fx2), int(h * fy2)))
+		cw, ch = crop.size
+		scale = max_dimension / max(cw, ch) if max(cw, ch) else 1
+		if scale and scale != 1:
+			crop = crop.resize((max(1, int(cw * scale)), max(1, int(ch * scale))))
+		buffer = io.BytesIO()
+		crop.save(buffer, format="JPEG", quality=92)
+	return base64.b64encode(buffer.getvalue()).decode("ascii")
+
+
+def build_focus_prompt(doctype: str, fields: list[dict]) -> str:
+	"""Prompt for the focus pass: a zoomed crop, read only the given field(s)."""
+	lines = [f"- {f['label']} [{f['fieldname']}]" for f in fields]
+	return (
+		f"This image is a zoomed-in crop of part of a {doctype} form (e.g. an "
+		"'office use' box). Read ONLY the following field(s); the value may be "
+		"handwritten. Use null for anything you cannot read confidently — never guess:\n"
+		+ "\n".join(lines)
+	)
+
+
+def vision_extract(image_b64, settings, schema, prompt):
+	"""Dispatch a vision-LLM extraction to the configured engine (Ollama or OpenRouter)."""
+	if (settings.engine or "Ollama") == "OpenRouter":
+		from sunday_catechism.ocr import openrouter_engine
+
+		return openrouter_engine.extract(image_b64, settings, schema, prompt)
+
+	from sunday_catechism.ocr import ollama_engine
+
+	return ollama_engine.extract(image_b64, settings, schema, prompt)
+
+
+def apply_focus_pass(doctype, path, settings, fields, drafts):
+	"""Re-read configured fields from a zoomed crop when the main pass left them empty.
+
+	Only runs when exactly one record was found (a single form, not a register), so
+	the cropped region maps unambiguously to that record. Returns ``drafts`` mutated
+	in place. Ollama-only — relies on the vision model reading the crop.
+	"""
+	raw = (settings.get("focus_fields") or "").replace(",", "\n")
+	focus_names = {n.strip() for n in raw.splitlines() if n.strip()}
+	if not focus_names or len(drafts) != 1:
+		return drafts
+
+	subset = [f for f in fields if f["fieldname"] in focus_names]
+	if not subset:
+		return drafts
+
+	region = settings.get("focus_region") or "Bottom"
+	crop_b64 = crop_region_b64(path, region)
+	focus_recs = vision_extract(
+		crop_b64, settings, build_schema(subset), build_focus_prompt(doctype, subset)
+	)
+	if focus_recs:
+		found, draft = focus_recs[0], drafts[0]
+		for f in subset:
+			name = f["fieldname"]
+			if draft.get(name) in (None, "", "null") and found.get(name) not in (None, "", "null"):
+				draft[name] = found[name]
+	return drafts
 
 
 def _parse_date(value):
@@ -252,7 +387,17 @@ def normalize_draft(draft: dict, fields: list[dict]) -> dict:
 			except (TypeError, ValueError):
 				uncertain.append(name)
 		else:
-			clean[name] = str(value).strip()
+			val = str(value).strip()
+			choices = [o.strip() for o in (field.get("options") or "").splitlines() if o.strip()]
+			if choices:
+				# Map to an exact valid value (case-insensitive); flag if no match so
+				# the reviewer corrects a Link/Select the model invented or misread.
+				match = next((o for o in choices if o.lower() == val.lower()), None)
+				clean[name] = match or val
+				if not match:
+					uncertain.append(name)
+			else:
+				clean[name] = val
 
 	if draft.get("_raw_text"):
 		clean["_raw_text"] = draft["_raw_text"]

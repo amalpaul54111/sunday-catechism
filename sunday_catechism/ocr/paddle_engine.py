@@ -1,47 +1,49 @@
 # Copyright (c) 2026, amal@zimplify.tech and contributors
 # For license information, please see license.txt
 
-"""PaddleOCR (classic OCR) backend.
+"""PaddleOCR (classic OCR) backend — calls the official PaddleX OCR serving.
 
-PaddleOCR returns raw text lines with no notion of fields, so the shared
-`base.heuristic_parse` maps them onto fields by label. Note: paddlepaddle has no
-wheels for very new Python versions (e.g. 3.14) — use the Tesseract engine there.
+paddlepaddle (PaddleOCR's inference backend) has no wheels for very new Python
+versions (e.g. 3.14), so it cannot run inside the Frappe bench env. Instead we
+run the official `paddlex --serve --pipeline OCR` server in its own container
+and reach it over HTTP — exactly like the Ollama engine. PaddleX returns the
+recognised text lines, which `base.heuristic_parse` maps onto fields by label.
+
+See docs/paddleocr/ (the service) and docs/compose.paddleocr.yaml (the overlay).
+PaddleX serving API: POST /ocr with {"file": <base64>, "fileType": 1}; the texts
+come back at result.ocrResults[].prunedResult.rec_texts.
 """
 
 import frappe
+import requests
 from frappe import _
 
 from sunday_catechism.ocr import base
 
-# PaddleOCR loads a model into memory on first use; cache the instance per
-# (lang, gpu) so repeated calls in the same worker stay fast.
-_OCR_CACHE: dict = {}
 
+def extract(image_b64: str, settings, fields: list[dict]) -> list[dict]:
+	url = (settings.get("paddle_url") or "http://paddleocr:8080").rstrip("/")
+	timeout = settings.get("paddle_timeout") or 120
 
-def _get_engine(lang: str, use_gpu: bool):
-	key = (lang or "en", bool(use_gpu))
-	if key not in _OCR_CACHE:
-		try:
-			from paddleocr import PaddleOCR
-		except ImportError:
-			frappe.throw(
-				_(
-					"PaddleOCR is not installed (note: it has no wheels for Python 3.14). Run "
-					"`pip install paddlepaddle paddleocr`, or switch the engine to Tesseract or "
-					"Ollama in OCR Settings."
-				)
+	try:
+		# fileType 1 = image; visualize=False skips the (large) rendered result image.
+		resp = requests.post(
+			f"{url}/ocr",
+			json={"file": image_b64, "fileType": 1, "visualize": False},
+			timeout=timeout,
+		)
+		resp.raise_for_status()
+	except requests.exceptions.RequestException as e:
+		frappe.throw(
+			_("Could not reach the PaddleOCR service at {0}. Is the sidecar running? ({1})").format(
+				url, str(e)
 			)
-		_OCR_CACHE[key] = PaddleOCR(use_angle_cls=True, lang=key[0], use_gpu=key[1], show_log=False)
-	return _OCR_CACHE[key]
+		)
 
-
-def extract(path: str, settings, fields: list[dict]) -> list[dict]:
-	engine = _get_engine(settings.paddle_lang, settings.paddle_use_gpu)
-	result = engine.ocr(path, cls=True)
-
-	lines = []
-	for block in result or []:
-		for line in block or []:
-			lines.append(line[1][0])
+	results = (resp.json().get("result") or {}).get("ocrResults") or []
+	lines: list[str] = []
+	for res in results:
+		pruned = res.get("prunedResult") or {}
+		lines.extend(pruned.get("rec_texts") or [])
 
 	return [base.heuristic_parse("\n".join(lines), fields)]
