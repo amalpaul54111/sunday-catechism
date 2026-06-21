@@ -14,8 +14,16 @@ class Teacher(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
+		additional_services: DF.SmallText | None
+		address: DF.SmallText | None
+		bct_courses_attended: DF.SmallText | None
+		catechism_joining_year: DF.Int
 		date_of_birth: DF.Date | None
+		fathers_or_husbands_name: DF.Data | None
 		full_name: DF.Data
+		marital_status: DF.Literal["", "Single", "Married", "Widowed", "Divorced", "Separated"]
+		occupation: DF.Data | None
+		parish_activities: DF.SmallText | None
 		phone: DF.Phone | None
 		qualification: DF.Data | None
 		years_of_experience: DF.Int

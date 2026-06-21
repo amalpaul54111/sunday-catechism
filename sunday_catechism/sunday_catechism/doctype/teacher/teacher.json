@@ -9,46 +9,119 @@
  "engine": "InnoDB",
  "field_order": [
   "full_name",
+  "fathers_or_husbands_name",
+  "marital_status",
   "date_of_birth",
-  "years_of_experience",
+  "column_break_personal",
+  "occupation",
+  "qualification",
   "phone",
-  "qualification"
+  "address_section",
+  "address",
+  "catechism_section",
+  "catechism_joining_year",
+  "bct_courses_attended",
+  "parish_activities",
+  "additional_services",
+  "column_break_catechism",
+  "years_of_experience"
  ],
  "fields": [
-  {
-   "fieldname": "date_of_birth",
-   "fieldtype": "Date",
-   "label": "Date of Birth"
-  },
-  {
-   "fieldname": "years_of_experience",
-   "fieldtype": "Int",
-   "label": "Years of Experience"
-  },
-  {
-   "fieldname": "phone",
-   "fieldtype": "Phone",
-   "label": "Phone"
-  },
   {
    "fieldname": "full_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Name",
-   "options": "Name",
    "reqd": 1,
    "unique": 1
   },
   {
+   "fieldname": "fathers_or_husbands_name",
+   "fieldtype": "Data",
+   "label": "Father's / Husband's Name"
+  },
+  {
+   "fieldname": "marital_status",
+   "fieldtype": "Select",
+   "label": "Marital Status",
+   "options": "\nSingle\nMarried\nWidowed\nDivorced\nSeparated"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date of Birth"
+  },
+  {
+   "fieldname": "column_break_personal",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "occupation",
+   "fieldtype": "Data",
+   "label": "Occupation"
+  },
+  {
    "fieldname": "qualification",
    "fieldtype": "Data",
-   "label": "Qualification"
+   "label": "Educational Qualification"
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Phone",
+   "in_list_view": 1,
+   "label": "Mobile No"
+  },
+  {
+   "fieldname": "address_section",
+   "fieldtype": "Section Break",
+   "label": "Address"
+  },
+  {
+   "description": "Up to 3 lines.",
+   "fieldname": "address",
+   "fieldtype": "Small Text",
+   "label": "Address"
+  },
+  {
+   "fieldname": "catechism_section",
+   "fieldtype": "Section Break",
+   "label": "Catechism & Service"
+  },
+  {
+   "fieldname": "catechism_joining_year",
+   "fieldtype": "Int",
+   "label": "Catechism Joining Year"
+  },
+  {
+   "fieldname": "bct_courses_attended",
+   "fieldtype": "Small Text",
+   "label": "BCT / Other Courses Attended"
+  },
+  {
+   "fieldname": "parish_activities",
+   "fieldtype": "Small Text",
+   "label": "Participation in other Parish Activities"
+  },
+  {
+   "fieldname": "additional_services",
+   "fieldtype": "Small Text",
+   "label": "Additional Services"
+  },
+  {
+   "fieldname": "column_break_catechism",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "years_of_experience",
+   "fieldtype": "Int",
+   "label": "Years of Experience"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-31 14:14:48.792667",
+ "modified": "2026-06-21 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "Sunday Catechism",
  "name": "Teacher",
