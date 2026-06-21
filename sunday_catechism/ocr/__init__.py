@@ -27,19 +27,13 @@ def get_ocr_doctypes() -> list[str]:
 	]
 
 
-@frappe.whitelist()
-def extract_documents(doctype: str, file_url: str) -> list[dict]:
-	if not doctype or not file_url:
-		frappe.throw(_("A doctype and an image are both required."))
+def extract_drafts(doctype: str, file_url: str, settings=None) -> list[dict]:
+	"""Run the OCR pipeline on one image and return normalised, doctype-shaped drafts.
 
-	settings = base.get_settings()
-
-	if doctype not in base.get_enabled_doctypes(settings):
-		frappe.throw(_("OCR is not enabled for {0}. Add it in OCR Settings.").format(doctype))
-
-	if not frappe.has_permission(doctype, "create"):
-		frappe.throw(_("You are not allowed to create {0}.").format(doctype), frappe.PermissionError)
-
+	The reusable core (no permission/whitelist checks) shared by the single-photo
+	`extract_documents` entry point and the OCR Bulk Import background job.
+	"""
+	settings = settings or base.get_settings()
 	fields = base.get_ocr_fields(doctype, settings)
 	if not fields:
 		frappe.throw(_("No OCR-eligible fields were found on {0}.").format(doctype))
@@ -67,3 +61,17 @@ def extract_documents(doctype: str, file_url: str) -> list[dict]:
 		drafts = base.apply_focus_pass(doctype, path, settings, fields, drafts)
 
 	return [base.normalize_draft(d, fields) for d in drafts]
+
+
+@frappe.whitelist()
+def extract_documents(doctype: str, file_url: str) -> list[dict]:
+	if not doctype or not file_url:
+		frappe.throw(_("A doctype and an image are both required."))
+
+	if doctype not in base.get_enabled_doctypes():
+		frappe.throw(_("OCR is not enabled for {0}. Add it in OCR Settings.").format(doctype))
+
+	if not frappe.has_permission(doctype, "create"):
+		frappe.throw(_("You are not allowed to create {0}.").format(doctype), frappe.PermissionError)
+
+	return extract_drafts(doctype, file_url)

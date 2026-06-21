@@ -1,0 +1,149 @@
+{
+ "actions": [],
+ "autoname": "format:BULK-OCR-{#####}",
+ "creation": "2026-06-21 19:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "document_type",
+  "status",
+  "column_break_top",
+  "data_import",
+  "upload_section",
+  "upload_help",
+  "files",
+  "zip_file",
+  "status_section",
+  "total_photos",
+  "records_extracted",
+  "column_break_stats",
+  "photos_failed",
+  "results_section",
+  "results"
+ ],
+ "fields": [
+  {
+   "description": "The doctype to create records into. Only OCR-enabled doctypes are allowed.",
+   "fieldname": "document_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Document Type",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nExtracting\nReady for Review\nCompleted\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_top",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The generated Data Import to review and run. Opens the standard import preview.",
+   "fieldname": "data_import",
+   "fieldtype": "Link",
+   "label": "Data Import (review here)",
+   "options": "Data Import",
+   "read_only": 1
+  },
+  {
+   "fieldname": "upload_section",
+   "fieldtype": "Section Break",
+   "label": "Photos"
+  },
+  {
+   "fieldname": "upload_help",
+   "fieldtype": "HTML",
+   "label": "Upload Help",
+   "options": "<p class=\"text-muted small\">Use <b>Upload Photos</b> to add images from your computer or phone (multi-select / camera), or attach a <b>ZIP</b> of images below. Then click <b>Extract &amp; Build Import</b>.</p>"
+  },
+  {
+   "fieldname": "files",
+   "fieldtype": "Table",
+   "label": "Photos",
+   "options": "OCR Bulk Import File"
+  },
+  {
+   "description": "Optional: a .zip of images instead of (or in addition to) the list above.",
+   "fieldname": "zip_file",
+   "fieldtype": "Attach",
+   "label": "ZIP of Images"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "status_section",
+   "fieldtype": "Section Break",
+   "label": "Progress"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_photos",
+   "fieldtype": "Int",
+   "label": "Total Photos",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "records_extracted",
+   "fieldtype": "Int",
+   "label": "Records Extracted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_stats",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "photos_failed",
+   "fieldtype": "Int",
+   "label": "Photos Failed",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "results_section",
+   "fieldtype": "Section Break",
+   "label": "Per-photo Results"
+  },
+  {
+   "fieldname": "results",
+   "fieldtype": "Table",
+   "label": "Results",
+   "options": "OCR Bulk Import Result",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-21 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Sunday Catechism",
+ "name": "OCR Bulk Import",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
