@@ -266,7 +266,14 @@ def apply_focus_pass(doctype, path, settings, fields, drafts):
 	if not focus_names or len(drafts) != 1:
 		return drafts
 
-	subset = [f for f in fields if f["fieldname"] in focus_names]
+	# Only re-read focus fields the main pass left empty — if it already found them
+	# all, skip the (possibly several) extra model calls entirely.
+	draft = drafts[0]
+	subset = [
+		f
+		for f in fields
+		if f["fieldname"] in focus_names and draft.get(f["fieldname"]) in (None, "", "null")
+	]
 	if not subset:
 		return drafts
 
@@ -289,10 +296,9 @@ def apply_focus_pass(doctype, path, settings, fields, drafts):
 			if value not in (None, "", "null"):
 				tallies[f["fieldname"]][str(value).strip()] += 1
 
-	draft = drafts[0]
 	for f in subset:
 		name = f["fieldname"]
-		if draft.get(name) in (None, "", "null") and tallies[name]:
+		if tallies[name]:
 			draft[name] = tallies[name].most_common(1)[0][0]
 	return drafts
 
