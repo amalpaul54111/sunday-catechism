@@ -149,19 +149,29 @@ def _collect_images(doc) -> list[str]:
 			for info in archive.infolist():
 				if info.is_dir():
 					continue
-				if os.path.splitext(info.filename)[1].lower() not in IMAGE_EXTS:
+				name = info.filename
+				base_name = os.path.basename(name)
+				# Skip macOS archive junk (__MACOSX/, ._resource forks), hidden files,
+				# and anything that isn't an image by extension.
+				if name.startswith("__MACOSX/") or base_name.startswith("."):
 					continue
-				saved = frappe.get_doc(
-					{
-						"doctype": "File",
-						"file_name": os.path.basename(info.filename),
-						"is_private": 1,
-						"content": archive.read(info),
-						"attached_to_doctype": "OCR Bulk Import",
-						"attached_to_name": doc.name,
-					}
-				).insert(ignore_permissions=True)
-				urls.append(saved.file_url)
+				if os.path.splitext(base_name)[1].lower() not in IMAGE_EXTS:
+					continue
+				try:
+					saved = frappe.get_doc(
+						{
+							"doctype": "File",
+							"file_name": base_name,
+							"is_private": 1,
+							"content": archive.read(info),
+							"attached_to_doctype": "OCR Bulk Import",
+							"attached_to_name": doc.name,
+						}
+					).insert(ignore_permissions=True)
+					urls.append(saved.file_url)
+				except Exception:
+					# Mislabelled / corrupt entry — skip it rather than fail the batch.
+					frappe.log_error(frappe.get_traceback(), f"OCR Bulk Import: skipped {name}")
 	return urls
 
 
