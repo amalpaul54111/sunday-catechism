@@ -12,6 +12,7 @@ schema + prompt (Ollama) or a field list (PaddleOCR) and return raw drafts.
 import base64
 import io
 import re
+from collections import Counter
 
 import frappe
 
@@ -241,16 +242,16 @@ def build_focus_prompt(doctype: str, fields: list[dict]) -> str:
 	)
 
 
-def vision_extract(image_b64, settings, schema, prompt):
+def vision_extract(image_b64, settings, schema, prompt, temperature=0):
 	"""Dispatch a vision-LLM extraction to the configured engine (Ollama or OpenRouter)."""
 	if (settings.engine or "Ollama") == "OpenRouter":
 		from sunday_catechism.ocr import openrouter_engine
 
-		return openrouter_engine.extract(image_b64, settings, schema, prompt)
+		return openrouter_engine.extract(image_b64, settings, schema, prompt, temperature)
 
 	from sunday_catechism.ocr import ollama_engine
 
-	return ollama_engine.extract(image_b64, settings, schema, prompt)
+	return ollama_engine.extract(image_b64, settings, schema, prompt, temperature)
 
 
 def apply_focus_pass(doctype, path, settings, fields, drafts):
@@ -271,15 +272,28 @@ def apply_focus_pass(doctype, path, settings, fields, drafts):
 
 	region = settings.get("focus_region") or "Bottom"
 	crop_b64 = crop_region_b64(path, region)
-	focus_recs = vision_extract(
-		crop_b64, settings, build_schema(subset), build_focus_prompt(doctype, subset)
-	)
-	if focus_recs:
-		found, draft = focus_recs[0], drafts[0]
+	schema, prompt = build_schema(subset), build_focus_prompt(doctype, subset)
+
+	# Best-of-N self-consistency: with >1 vote, query the crop several times at a
+	# small temperature (so reads can vary) and take the most common non-null value
+	# per field. Null reads are ignored, so this mainly recovers recall — capturing
+	# a value whenever any vote reads it — while the majority guards against noise.
+	votes = max(1, int(settings.get("focus_votes") or 1))
+	temperature = 0 if votes == 1 else 0.3
+	tallies = {f["fieldname"]: Counter() for f in subset}
+	for _ in range(votes):
+		recs = vision_extract(crop_b64, settings, schema, prompt, temperature)
+		found = recs[0] if recs else {}
 		for f in subset:
-			name = f["fieldname"]
-			if draft.get(name) in (None, "", "null") and found.get(name) not in (None, "", "null"):
-				draft[name] = found[name]
+			value = found.get(f["fieldname"])
+			if value not in (None, "", "null"):
+				tallies[f["fieldname"]][str(value).strip()] += 1
+
+	draft = drafts[0]
+	for f in subset:
+		name = f["fieldname"]
+		if draft.get(name) in (None, "", "null") and tallies[name]:
+			draft[name] = tallies[name].most_common(1)[0][0]
 	return drafts
 
 

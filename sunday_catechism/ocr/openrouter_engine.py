@@ -16,7 +16,7 @@ import requests
 from frappe import _
 
 
-def extract(image_b64: str, settings, schema: dict, prompt: str) -> list[dict]:
+def extract(image_b64: str, settings, schema: dict, prompt: str, temperature: float = 0) -> list[dict]:
 	api_key = settings.get_password("openrouter_api_key") if settings.get("openrouter_api_key") else None
 	if not api_key:
 		frappe.throw(_("Set an OpenRouter API Key in OCR Settings to use the OpenRouter engine."))
@@ -27,7 +27,7 @@ def extract(image_b64: str, settings, schema: dict, prompt: str) -> list[dict]:
 
 	payload = {
 		"model": model,
-		"temperature": 0,
+		"temperature": temperature,
 		"response_format": {"type": "json_object"},
 		"messages": [
 			{

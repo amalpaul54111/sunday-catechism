@@ -14,7 +14,7 @@ import requests
 from frappe import _
 
 
-def extract(image_b64: str, settings, schema: dict, prompt: str) -> list[dict]:
+def extract(image_b64: str, settings, schema: dict, prompt: str, temperature: float = 0) -> list[dict]:
 	url = (settings.ollama_url or "http://ollama:11434").rstrip("/")
 	model = settings.ollama_model or "qwen2.5vl:3b"
 	timeout = settings.ollama_timeout or 120
@@ -28,7 +28,7 @@ def extract(image_b64: str, settings, schema: dict, prompt: str) -> list[dict]:
 		"model": model,
 		"stream": False,
 		"format": schema,
-		"options": {"temperature": 0, "num_ctx": num_ctx},
+		"options": {"temperature": temperature, "num_ctx": num_ctx},
 		"messages": [{"role": "user", "content": prompt, "images": [image_b64]}],
 	}
 

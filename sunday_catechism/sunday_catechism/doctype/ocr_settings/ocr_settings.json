@@ -19,6 +19,7 @@
   "focus_section",
   "focus_fields",
   "focus_region",
+  "focus_votes",
   "paddle_section",
   "paddle_url",
   "paddle_lang",
@@ -133,6 +134,14 @@
    "options": "Bottom\nTop\nLeft\nRight\nBottom Right\nTop Right\nWhole"
   },
   {
+   "default": "1",
+   "depends_on": "eval:doc.engine=='Ollama'",
+   "description": "How many times to run the focus query; the most common value per field wins (best-of-N). 1 = single pass (fastest). 3 reads noisy handwriting far more consistently, at ~3x the focus-pass time.",
+   "fieldname": "focus_votes",
+   "fieldtype": "Int",
+   "label": "Focus Votes (best-of-N)"
+  },
+  {
    "default": "http://paddleocr:8080",
    "description": "Base URL of the PaddleOCR (PaddleX) serving sidecar. paddlepaddle has no Python 3.14 wheels, so PaddleOCR runs as a separate container reached over HTTP (see docs/compose.paddleocr.yaml). In a devcontainer use http://host.docker.internal:8080.",
    "fieldname": "paddle_url",
@@ -204,7 +213,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-06-21 16:30:00.000000",
+ "modified": "2026-06-21 17:00:00.000000",
  "modified_by": "Administrator",
  "module": "Sunday Catechism",
  "name": "OCR Settings",
