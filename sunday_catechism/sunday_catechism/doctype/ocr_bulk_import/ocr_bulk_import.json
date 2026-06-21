@@ -19,7 +19,9 @@
   "column_break_stats",
   "photos_failed",
   "results_section",
-  "results"
+  "results",
+  "source_photos",
+  "photos_attached"
  ],
  "fields": [
   {
@@ -117,6 +119,21 @@
    "fieldtype": "Table",
    "label": "Results",
    "options": "OCR Bulk Import Result",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_photos",
+   "fieldtype": "Long Text",
+   "hidden": 1,
+   "label": "Source Photos",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "photos_attached",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Photos Attached",
    "read_only": 1
   }
  ],

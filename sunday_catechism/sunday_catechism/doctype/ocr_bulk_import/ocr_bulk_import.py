@@ -6,10 +6,11 @@
 Runs the photo OCR pipeline over many images in a background job, then builds a
 standard Frappe **Data Import** from the extracted rows so the user reviews and
 creates the records through the normal Data Import preview (validation, inline
-edit, mapping). The source photo is carried in an `ocr_source_photo` Attach Image
-field added to the target doctype, so every created record links back to its image.
+edit, mapping). After the import runs, each source photo is added to the record
+it created as a native file attachment (no per-doctype field required).
 """
 
+import json
 import os
 import zipfile
 
@@ -21,7 +22,6 @@ from frappe.utils.xlsxutils import make_xlsx
 from sunday_catechism.ocr import base, extract_drafts
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff"}
-SOURCE_PHOTO_FIELD = "ocr_source_photo"
 
 
 class OCRBulkImport(Document):
@@ -43,9 +43,11 @@ class OCRBulkImport(Document):
 		data_import: DF.Link | None
 		document_type: DF.Link
 		files: DF.Table[OCRBulkImportFile]
+		photos_attached: DF.Check
 		photos_failed: DF.Int
 		records_extracted: DF.Int
 		results: DF.Table[OCRBulkImportResult]
+		source_photos: DF.LongText | None
 		status: DF.Literal["Draft", "Extracting", "Ready for Review", "Completed", "Failed"]
 		total_photos: DF.Int
 		zip_file: DF.Attach | None
@@ -94,10 +96,10 @@ def _extract_all(doc):
 	settings = base.get_settings()
 	fields = base.get_ocr_fields(doc.document_type, settings)
 	fieldnames = [f["fieldname"] for f in fields]
-	_ensure_source_photo_field(doc.document_type)
 
 	images = _collect_images(doc)
-	rows = [fieldnames + [SOURCE_PHOTO_FIELD]]  # header
+	rows = [fieldnames]  # header
+	photo_per_row = []  # source photo url aligned with each data row of `rows`
 	results = []
 	extracted = 0
 	failed = 0
@@ -110,7 +112,8 @@ def _extract_all(doc):
 				clean = {k: v for k, v in draft.items() if not k.startswith("_")}
 				if not clean:
 					continue
-				rows.append([clean.get(fn, "") for fn in fieldnames] + [file_url])
+				rows.append([clean.get(fn, "") for fn in fieldnames])
+				photo_per_row.append(file_url)
 				count += 1
 			results.append(
 				{
@@ -133,10 +136,63 @@ def _extract_all(doc):
 	doc.records_extracted = extracted
 	doc.photos_failed = failed
 	doc.data_import = data_import
+	doc.source_photos = json.dumps(photo_per_row)
+	doc.photos_attached = 0
 	doc.status = "Ready for Review" if extracted else "Completed"
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()
 	_publish(doc.name, doc.status, done=len(images), total=len(images))
+
+
+def attach_bulk_import_photos(doc, method=None):
+	"""On Data Import completion, attach each source photo to the record it created.
+
+	Wired via doc_events on Data Import. Uses the Data Import Log (row -> docname)
+	to attach the right photo to each created record as a native file attachment —
+	so no per-doctype image field is needed. Idempotent via `photos_attached`.
+	"""
+	if doc.status not in ("Success", "Partial Success"):
+		return
+	bulk_name = frappe.db.get_value("OCR Bulk Import", {"data_import": doc.name}, "name")
+	if not bulk_name:
+		return
+	bulk = frappe.get_doc("OCR Bulk Import", bulk_name)
+	if bulk.photos_attached:
+		return
+
+	photos = json.loads(bulk.source_photos or "[]")
+	logs = frappe.get_all(
+		"Data Import Log",
+		filters={"data_import": doc.name, "success": 1},
+		fields=["row_indexes", "docname"],
+	)
+	for log in logs:
+		if not log.docname:
+			continue
+		# Header is sheet row 1, so the first data row is row 2 -> photo index 0.
+		photo_index = min(json.loads(log.row_indexes)) - 2
+		if 0 <= photo_index < len(photos):
+			_attach_photo(bulk.document_type, log.docname, photos[photo_index])
+
+	bulk.db_set("photos_attached", 1)
+	bulk.db_set("status", "Completed")
+
+
+def _attach_photo(doctype: str, docname: str, file_url: str):
+	"""Add `file_url` as a file attachment on the given record (once)."""
+	if frappe.db.exists(
+		"File", {"file_url": file_url, "attached_to_doctype": doctype, "attached_to_name": docname}
+	):
+		return
+	frappe.get_doc(
+		{
+			"doctype": "File",
+			"file_url": file_url,
+			"is_private": 1,
+			"attached_to_doctype": doctype,
+			"attached_to_name": docname,
+		}
+	).insert(ignore_permissions=True)
 
 
 def _collect_images(doc) -> list[str]:
@@ -196,23 +252,6 @@ def _build_data_import(doctype: str, rows: list[list]) -> str:
 		}
 	).insert(ignore_permissions=True)
 	return data_import.name
-
-
-def _ensure_source_photo_field(doctype: str):
-	"""Add an `ocr_source_photo` Attach Image field to the target doctype (once)."""
-	if frappe.db.exists("Custom Field", {"dt": doctype, "fieldname": SOURCE_PHOTO_FIELD}):
-		return
-	from frappe.custom.doctype.custom_field.custom_field import create_custom_field
-
-	create_custom_field(
-		doctype,
-		{
-			"fieldname": SOURCE_PHOTO_FIELD,
-			"label": "OCR Source Photo",
-			"fieldtype": "Attach Image",
-			"description": "The photo this record was OCR-imported from, for verification.",
-		},
-	)
 
 
 def _publish(docname: str, status: str, done: int = 0, total: int = 0):
