@@ -1,7 +1,10 @@
 {#-
 	Catechism Attendance Register — landscape A4 PDF.
 	Sections: cover page, attendance master sheet, per-month internals sheets.
-	Context: class_name, teacher, academic_year, students[], sundays[], months[]
+	Context: registers[] — one entry per class, each with
+	         { class_name, teacher, academic_year, students[], sundays[], terms[],
+	           internal_pages[], name_col_px, total_rows }. Multiple classes print as
+	         one booklet; each register after the first starts on a fresh page.
 
 	Note: this is rendered by wkhtmltopdf (patched Qt WebKit), which supports
 	neither CSS `writing-mode` nor `transform: rotate`. Vertical column headers are
@@ -24,6 +27,10 @@
 
 	.page { page-break-after: always; }
 	.page:last-child { page-break-after: auto; }
+
+	/* Each class is one register; every register after the first opens on a new page. */
+	.register { page-break-before: always; }
+	.register:first-child { page-break-before: avoid; }
 
 	/* ---- Cover ---- */
 	.cover {
@@ -83,6 +90,8 @@
 {%- macro blanks(n) -%}{% for _ in range(n) %}<td></td>{% endfor %}{%- endmacro -%}
 
 <div class="print-format">
+{% for reg in registers %}
+	<div class="register">
 
 	{#- 1. COVER PAGE -#}
 	<div class="page">
@@ -90,18 +99,18 @@
 			<div class="diocese">Diocese of Irinjalakuda</div>
 			<div class="reg-title">Catechism Attendance Register</div>
 			<div class="class-label">Class</div>
-			<h1>{{ class_name }}</h1>
+			<h1>{{ reg.class_name }}</h1>
 			<div class="teacher">
 				<small>Teacher</small>
-				{{ teacher or "—" }}
+				{{ reg.teacher or "—" }}
 			</div>
-			<div class="year">Academic Year&nbsp;&nbsp;{{ academic_year }}</div>
+			<div class="year">Academic Year&nbsp;&nbsp;{{ reg.academic_year }}</div>
 		</div>
 	</div>
 
 	{#- 2. STUDENT DETAILS — full-width bio-data on its own page -#}
 	<div class="page">
-		<div class="sheet-title">Student Details &mdash; <small>{{ class_name }} &middot; {{ academic_year }}</small></div>
+		<div class="sheet-title">Student Details &mdash; <small>{{ reg.class_name }} &middot; {{ reg.academic_year }}</small></div>
 		<table class="reg">
 			<colgroup>
 				<col style="width: 3%;">    {#- No -#}
@@ -130,7 +139,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{% for st in students %}
+				{% for st in reg.students %}
 				<tr>
 					<td class="c">{{ loop.index }}</td>
 					<td class="c">{{ st.admission_no }}</td>
@@ -144,7 +153,7 @@
 					<td class="c">{{ frappe.utils.formatdate(st.date_of_baptism) if st.date_of_baptism else "" }}</td>
 				</tr>
 				{% endfor %}
-				{% for r in range(students | length + 1, total_rows + 1) %}
+				{% for r in range(reg.students | length + 1, reg.total_rows + 1) %}
 				<tr><td class="c">{{ r }}</td>{{ blanks(9) }}</tr>
 				{% endfor %}
 			</tbody>
@@ -156,10 +165,10 @@
 	   Total Attendance column and that term's exam block (Marks / Internal / Total). The
 	   final term also carries the year-end summary (Total Marks / Pass-Fail). Sunday and
 	   exam columns are left unsized so they share the width left by the No/Adm/Name stub. -#}
-	{% for term in terms %}
+	{% for term in reg.terms %}
 	{%- set narrow = (term.sundays | length) + 4 + (2 if term.is_last else 0) -%}
 	<div class="page">
-		<div class="sheet-title">Attendance Register &mdash; {{ term.label }} <small>&middot; {{ class_name }} &middot; {{ academic_year }}</small></div>
+		<div class="sheet-title">Attendance Register &mdash; {{ term.label }} <small>&middot; {{ reg.class_name }} &middot; {{ reg.academic_year }}</small></div>
 		<table class="reg">
 			<colgroup>
 				<col style="width: 3%;">    {#- No -#}
@@ -190,7 +199,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{% for st in students %}
+				{% for st in reg.students %}
 				<tr>
 					<td class="c">{{ loop.index }}</td>
 					<td class="c">{{ st.admission_no }}</td>
@@ -198,7 +207,7 @@
 					{{ blanks(narrow) }}
 				</tr>
 				{% endfor %}
-				{% for r in range(students | length + 1, total_rows + 1) %}
+				{% for r in range(reg.students | length + 1, reg.total_rows + 1) %}
 				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(narrow) }}</tr>
 				{% endfor %}
 			</tbody>
@@ -207,14 +216,14 @@
 	{% endfor %}
 
 	{#- 3. INTERNALS — ~8-9 weeks per page (Holy Mass / Academics / Assembly per Sunday) -#}
-	{% for pg in internal_pages %}
+	{% for pg in reg.internal_pages %}
 	<div class="page">
-		<div class="sheet-title">Internals &mdash; {{ pg.label }} <small>&middot; {{ class_name }} &middot; {{ academic_year }}</small></div>
+		<div class="sheet-title">Internals &mdash; {{ pg.label }} <small>&middot; {{ reg.class_name }} &middot; {{ reg.academic_year }}</small></div>
 		<table class="reg">
 			<colgroup>
 				<col style="width: 3%;">                  {#- No -#}
 				<col style="width: 5%;">                  {#- Adm No -#}
-				<col style="width: {{ name_col_px }}px;"> {#- Name (sized to longest name) -#}
+				<col style="width: {{ reg.name_col_px }}px;"> {#- Name (sized to longest name) -#}
 				{% for s in pg.sundays %}<col><col><col>{% endfor %}
 			</colgroup>
 			<thead>
@@ -233,7 +242,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{% for st in students %}
+				{% for st in reg.students %}
 				<tr>
 					<td class="c">{{ loop.index }}</td>
 					<td class="c">{{ st.admission_no }}</td>
@@ -241,7 +250,7 @@
 					{% for s in pg.sundays %}<td></td><td></td><td></td>{% endfor %}
 				</tr>
 				{% endfor %}
-				{% for r in range(students | length + 1, total_rows + 1) %}
+				{% for r in range(reg.students | length + 1, reg.total_rows + 1) %}
 				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(pg.sundays | length * 3) }}</tr>
 				{% endfor %}
 			</tbody>
@@ -251,7 +260,7 @@
 
 	{#- 4. PARENT–TEACHER MEETING — both parents sign at each of the (up to two) meetings -#}
 	<div class="page">
-		<div class="sheet-title">Parent &ndash; Teacher Meeting <small>&middot; {{ class_name }} &middot; {{ academic_year }}</small></div>
+		<div class="sheet-title">Parent &ndash; Teacher Meeting <small>&middot; {{ reg.class_name }} &middot; {{ reg.academic_year }}</small></div>
 		<table class="reg">
 			<colgroup>
 				<col style="width: 4%;">    {#- No -#}
@@ -276,7 +285,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{% for st in students %}
+				{% for st in reg.students %}
 				<tr>
 					<td class="c">{{ loop.index }}</td>
 					<td class="c">{{ st.admission_no }}</td>
@@ -284,7 +293,7 @@
 					<td></td><td></td><td></td><td></td>
 				</tr>
 				{% endfor %}
-				{% for r in range(students | length + 1, total_rows + 1) %}
+				{% for r in range(reg.students | length + 1, reg.total_rows + 1) %}
 				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(4) }}</tr>
 				{% endfor %}
 			</tbody>
@@ -293,7 +302,7 @@
 
 	{#- 5. ADDITIONAL RECORD — student list with up to 6 blank, write-in column headings -#}
 	<div class="page">
-		<div class="sheet-title">Additional Record <small>&middot; {{ class_name }} &middot; {{ academic_year }}</small></div>
+		<div class="sheet-title">Additional Record <small>&middot; {{ reg.class_name }} &middot; {{ reg.academic_year }}</small></div>
 		<table class="reg">
 			<colgroup>
 				<col style="width: 4%;">    {#- No -#}
@@ -310,7 +319,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{% for st in students %}
+				{% for st in reg.students %}
 				<tr>
 					<td class="c">{{ loop.index }}</td>
 					<td class="c">{{ st.admission_no }}</td>
@@ -318,11 +327,13 @@
 					{{ blanks(6) }}
 				</tr>
 				{% endfor %}
-				{% for r in range(students | length + 1, total_rows + 1) %}
+				{% for r in range(reg.students | length + 1, reg.total_rows + 1) %}
 				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(6) }}</tr>
 				{% endfor %}
 			</tbody>
 		</table>
 	</div>
 
+	</div>{#- /.register -#}
+{% endfor %}
 </div>

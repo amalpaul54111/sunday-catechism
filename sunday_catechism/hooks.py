@@ -26,10 +26,11 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/sunday_catechism/css/sunday_catechism.css"
-# Adds the "Import from Photo" button to every doctype enabled in OCR Settings.
-# Bundled (note the ".bundle.js") so `bench build` content-hashes it and browsers
+# Bundled (note the ".bundle.js") so `bench build` content-hashes them and browsers
 # always pick up edits — a plain /assets path is cached and never cache-busted.
-app_include_js = "ocr_import.bundle.js"
+#  - ocr_import: "Import/Fill from Photo" on every doctype enabled in OCR Settings.
+#  - register:   "Print Register(s)" on the Class form and list view.
+app_include_js = ["ocr_import.bundle.js", "register.bundle.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/sunday_catechism/css/sunday_catechism.css"
