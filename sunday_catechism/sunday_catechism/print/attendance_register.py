@@ -1,6 +1,9 @@
 # Copyright (c) 2026, amal@zimplify.tech and contributors
 # For license information, please see license.txt
 
+import io
+import zipfile
+
 import frappe
 from frappe.utils import cint
 from frappe.utils.pdf import get_pdf
@@ -74,46 +77,69 @@ def _register_context(class_name: str, ay) -> dict:
 	}
 
 
-def _stream_registers(class_names: list[str], academic_year: str, preview: bool = False) -> None:
-	"""Render the register(s) for ``class_names`` into one landscape A4 PDF and stream it.
+def _build_register_pdf(class_name: str, ay) -> bytes:
+	"""Render one class's attendance register as a landscape A4 PDF (raw bytes)."""
+	html = frappe.render_template(TEMPLATE, {"registers": [_register_context(class_name, ay)]})
+	return get_pdf(html, {"orientation": "Landscape", "page-size": "A4"})
 
-	When several classes are passed each one's register starts on a fresh page (the
-	template forces a page break between registers), so a whole grade prints as a single
-	booklet. ``preview`` streams the PDF inline (``Content-Disposition: inline``) so it can
-	be shown in an <iframe>; otherwise it is sent as a download.
+
+def _safe_filename(class_name: str) -> str:
+	return class_name.replace(" ", "-").replace("/", "-")
+
+
+def _stream_registers(class_names: list[str], academic_year: str, preview: bool = False) -> None:
+	"""Stream the register(s) for ``class_names`` to the browser.
+
+	A single class is streamed as its own landscape A4 PDF; ``preview`` streams it inline
+	(``Content-Disposition: inline``) so it can be shown in an <iframe>, otherwise it is
+	sent as a download. Multiple classes are bundled into a ZIP of one PDF per class —
+	never a single combined file — so each class can be saved or printed individually.
 	"""
 	if not frappe.has_permission("Class", "print"):
 		frappe.throw("Not permitted to print Class", frappe.PermissionError)
 
 	ay = frappe.get_doc("Academic Year", academic_year)
-	registers = [_register_context(name, ay) for name in class_names]
-
-	html = frappe.render_template(TEMPLATE, {"registers": registers})
-	pdf = get_pdf(html, {"orientation": "Landscape", "page-size": "A4"})
 
 	if len(class_names) == 1:
-		safe_name = class_names[0].replace(" ", "-").replace("/", "-")
-		filename = f"Attendance-Register-{safe_name}.pdf"
-	else:
-		filename = f"Attendance-Registers-{len(class_names)}-Classes.pdf"
+		pdf = _build_register_pdf(class_names[0], ay)
+		frappe.local.response.update(
+			{
+				# "pdf" -> inline (preview in an iframe); "download" -> save dialog.
+				"type": "pdf" if preview else "download",
+				"filename": f"Attendance-Register-{_safe_filename(class_names[0])}.pdf",
+				"filecontent": pdf,
+			}
+		)
+		return
+
+	# One PDF per class, zipped together. Preview is meaningless for an archive, so the
+	# ZIP is always downloaded regardless of the ``preview`` flag.
+	buffer = io.BytesIO()
+	with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+		for name in class_names:
+			archive.writestr(
+				f"Attendance-Register-{_safe_filename(name)}.pdf",
+				_build_register_pdf(name, ay),
+			)
 
 	frappe.local.response.update(
 		{
-			# "pdf" -> inline (preview in an iframe); "download" -> save dialog.
-			"type": "pdf" if preview else "download",
-			"filename": filename,
-			"filecontent": pdf,
+			"type": "download",
+			"filename": f"Attendance-Registers-{len(class_names)}-Classes.zip",
+			"filecontent": buffer.getvalue(),
+			"content_type": "application/zip",
 		}
 	)
 
 
 @frappe.whitelist()
 def generate_registers(class_names: str, academic_year: str, preview: int = 0) -> None:
-	"""Build attendance registers for one or more classes as a single PDF.
+	"""Build attendance registers for one or more classes.
 
-	``class_names`` is a JSON-encoded list (or a single name); the PDF bundles them in
-	the given order, one register per class. ``preview`` (1/0) streams it inline so the
-	browser shows it in a viewer instead of downloading.
+	``class_names`` is a JSON-encoded list (or a single name). A single class is returned
+	as a PDF; multiple classes are returned as a ZIP holding one PDF per class (never a
+	combined file). ``preview`` (1/0) streams a single class inline so the browser shows
+	it in a viewer instead of downloading.
 	"""
 	class_names = frappe.parse_json(class_names)
 	if isinstance(class_names, str):

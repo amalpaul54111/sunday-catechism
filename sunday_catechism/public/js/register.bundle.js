@@ -3,8 +3,9 @@
 //
 // Attendance register printing for the Class doctype:
 //  - form view: "Print Register" button -> picks academic year -> preview -> download;
-//  - list view: "Print Registers" bulk action -> one PDF booklet for every selected class.
-// Both paths show a PDF preview before downloading.
+//  - list view: "Print Registers" bulk action -> a ZIP with one PDF per selected class.
+// A single class is previewed before download; multiple classes download the ZIP directly
+// (an archive can't be shown in an <iframe>).
 //
 // Loaded on every desk page via `app_include_js` (note the ".bundle.js" so `bench build`
 // content-hashes it and browsers always pick up edits, like the OCR bundle).
@@ -37,10 +38,17 @@ frappe.provide("sunday_catechism.register");
 					reqd: 1,
 				},
 			],
-			primary_action_label: __("Preview"),
+			// A single class can be previewed in an iframe; a multi-class ZIP cannot, so
+			// it downloads straight away.
+			primary_action_label:
+				class_names.length === 1 ? __("Preview") : __("Download ZIP"),
 			primary_action(values) {
 				d.hide();
-				ns.preview(class_names, values.academic_year);
+				if (class_names.length === 1) {
+					ns.preview(class_names, values.academic_year);
+				} else {
+					ns.download(class_names, values.academic_year);
+				}
 			},
 		});
 
@@ -54,6 +62,16 @@ frappe.provide("sunday_catechism.register");
 			});
 
 		d.show();
+	};
+
+	// Download straight to the browser: a single PDF, or a ZIP of one PDF per class.
+	ns.download = function (class_names, academic_year) {
+		const url = `/api/method/${METHOD}?${$.param({
+			class_names: JSON.stringify(class_names),
+			academic_year: academic_year,
+		})}`;
+		// The whitelisted method streams the file (response type "download").
+		window.open(url);
 	};
 
 	// Show the rendered PDF inline in an <iframe>; the primary action downloads it.
