@@ -153,23 +153,16 @@ app_include_js = ["ocr_import.bundle.js", "register.bundle.js"]
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"sunday_catechism.tasks.all"
-# 	],
-# 	"daily": [
-# 		"sunday_catechism.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"sunday_catechism.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"sunday_catechism.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"sunday_catechism.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	# Every Saturday at 07:00 (site timezone): email System Managers the students
+	# whose birthday falls this week (Mon–Sun) so they can be wished on Sunday.
+	# Cron day-of-week 6 = Saturday.
+	"cron": {
+		"0 7 * * 6": [
+			"sunday_catechism.tasks.notify_weekly_birthdays"
+		]
+	}
+}
 
 # Testing
 # -------
