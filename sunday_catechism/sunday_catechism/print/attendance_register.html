@@ -59,7 +59,7 @@
 	.sheet-title small { font-weight: 400; color: #666; }
 
 	/* Sized so up to ~24 students fit on one landscape page with comfortable rows. */
-	table.reg { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8px; }
+	table.reg { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10px; }
 	table.reg th, table.reg td {
 		border: 1px solid #333;
 		padding: 2px 3px;
@@ -83,7 +83,7 @@
 	SVG because this wkhtmltopdf build supports neither CSS transform nor writing-mode;
 	the SVG renderer honours its own transform. `h` is the cell/label height in px. -#}
 {%- macro vtext(text, h=60) -%}
-	<svg width="14" height="{{ h }}" viewBox="0 0 14 {{ h }}"><text transform="translate(10,{{ h - 3 }}) rotate(-90)" font-size="9" font-family="Arial, sans-serif" fill="#1a1a1a">{{ text }}</text></svg>
+	<svg width="14" height="{{ h }}" viewBox="0 0 14 {{ h }}"><text transform="translate(10,{{ h - 3 }}) rotate(-90)" font-size="11" font-family="Arial, sans-serif" fill="#1a1a1a">{{ text }}</text></svg>
 {%- endmacro -%}
 
 {#- N empty cells, used to build blank filler rows (for students who join mid-year). -#}
