@@ -12,10 +12,6 @@ from sunday_catechism.utils import chunk_sundays, get_sundays, local_phone, spli
 
 TEMPLATE = "sunday_catechism/sunday_catechism/print/attendance_register.html"
 
-# Every sheet is padded to at least this many rows; the spare rows are left blank
-# (only the serial number is filled) so a mid-year joiner can be written in later.
-TARGET_ROWS = 24
-
 
 _ORDER_BY = {
 	"Admission Number": "admission_no asc",
@@ -79,7 +75,7 @@ def _register_context(class_name: str, ay, student_order: str = "Admission Numbe
 		"terms": terms,
 		"internal_pages": chunk_sundays(sundays),
 		"name_col_px": name_col_px,
-		"total_rows": max(len(students), TARGET_ROWS),
+		"total_rows": len(students) + 2,
 	}
 
 
