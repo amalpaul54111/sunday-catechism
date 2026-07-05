@@ -83,13 +83,15 @@
 {#- Vertical header text, rotated 90° to read bottom-to-top. Rendered as inline
 	SVG because this wkhtmltopdf build supports neither CSS transform nor writing-mode;
 	the SVG renderer honours its own transform. `h` is the cell/label height in px at
-	the default font size (11); both h and the SVG width scale with vertical_header_font_size
-	so the text is never clipped when the font size is increased. -#}
+	the default font size (11) and scales with vertical_header_font_size.
+	SVG width = fs+4 and translate-x = fs so the full em-ascent always fits without
+	clipping regardless of font size (proportional scaling with | int truncation
+	underestimates the needed space once fs > 11). -#}
 {%- macro vtext(text, h=60) -%}
-{%- set scale = ps.vertical_header_font_size / 11 -%}
-{%- set svgw = (14 * scale) | int -%}
-{%- set svgh = (h * scale) | int -%}
-	<svg width="{{ svgw }}" height="{{ svgh }}" viewBox="0 0 {{ svgw }} {{ svgh }}"><text transform="translate({{ (10 * scale) | int }},{{ svgh - 3 }}) rotate(-90)" font-size="{{ ps.vertical_header_font_size }}" font-family="Arial, sans-serif" fill="#1a1a1a">{{ text }}</text></svg>
+{%- set fs = ps.vertical_header_font_size -%}
+{%- set svgw = fs + 4 -%}
+{%- set svgh = (h * fs / 11) | int -%}
+	<svg width="{{ svgw }}" height="{{ svgh }}" viewBox="0 0 {{ svgw }} {{ svgh }}"><text transform="translate({{ fs }},{{ svgh - 3 }}) rotate(-90)" font-size="{{ fs }}" font-family="Arial, sans-serif" fill="#1a1a1a">{{ text }}</text></svg>
 {%- endmacro -%}
 
 {#- N empty cells, used to build blank filler rows (for students who join mid-year). -#}
