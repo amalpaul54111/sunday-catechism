@@ -12,6 +12,12 @@ from sunday_catechism.utils import chunk_sundays, get_sundays, local_phone, spli
 
 TEMPLATE = "sunday_catechism/sunday_catechism/print/attendance_register.html"
 
+# Maximum data rows that fit on one landscape A4 page at default settings.
+# A4 landscape = 210 mm; margins 8 mm top + bottom = 16 mm; sheet title ≈ 7 mm;
+# two-row register header (tallest vtext h=88) ≈ 27 mm → 160 mm left for rows.
+# Row height is fixed at 6.5 mm in CSS and does not scale with font-size.
+_PAGE_ROWS = int((210.0 - 16.0 - 34.0) / 6.5)  # → 24
+
 
 _ORDER_BY = {
 	"Admission Number": "admission_no asc",
@@ -69,7 +75,7 @@ def _register_context(class_name: str, ay, student_order: str = "Admission Numbe
 		"sundays": sundays,
 		"terms": terms,
 		"internal_pages": chunk_sundays(sundays),
-		"total_rows": len(students) + 2,
+		"total_rows": max(len(students) + 2, _PAGE_ROWS),
 	}
 
 
