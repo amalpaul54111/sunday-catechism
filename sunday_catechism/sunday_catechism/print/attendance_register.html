@@ -73,7 +73,7 @@
 	table.reg th.writein { height: 14mm; background: #fff; }
 	table.reg td { height: 6.5mm; }
 	table.reg td.c, table.reg th.c { text-align: center; }
-	table.reg tbody td:nth-child(3) { font-weight: 600; }
+	table.reg td.name { font-weight: 600; }
 
 	/* Narrow columns with vertical (rotated, bottom-to-top) header text */
 	th.sun { padding: 1px 0; vertical-align: bottom; text-align: center; }
@@ -144,7 +144,7 @@
 				<tr>
 					<td class="c">{{ loop.index }}</td>
 					<td class="c">{{ st.admission_no }}</td>
-					<td>{{ st.full_name }}</td>
+					<td class="name">{{ st.full_name }}</td>
 					<td>{{ st.address or "" }}</td>
 					<td>{{ st.fathers_phone or "" }}</td>
 					<td>{{ st.name_of_father or "" }}</td>
@@ -201,7 +201,7 @@
 				{% for st in reg.students %}
 				<tr>
 					<td class="c">{{ loop.index }}</td>
-					<td>{{ st.full_name }}</td>
+					<td class="name">{{ st.full_name }}</td>
 					{{ blanks(narrow) }}
 				</tr>
 				{% endfor %}
@@ -241,7 +241,7 @@
 				{% for st in reg.students %}
 				<tr>
 					<td class="c">{{ loop.index }}</td>
-					<td>{{ st.full_name }}</td>
+					<td class="name">{{ st.full_name }}</td>
 					{% for s in pg.sundays %}<td></td><td></td><td></td>{% endfor %}
 				</tr>
 				{% endfor %}
@@ -281,7 +281,7 @@
 				{% for st in reg.students %}
 				<tr>
 					<td class="c">{{ loop.index }}</td>
-					<td>{{ st.full_name }}</td>
+					<td class="name">{{ st.full_name }}</td>
 					<td></td><td></td><td></td><td></td>
 				</tr>
 				{% endfor %}
@@ -312,7 +312,7 @@
 				{% for st in reg.students %}
 				<tr>
 					<td class="c">{{ loop.index }}</td>
-					<td>{{ st.full_name }}</td>
+					<td class="name">{{ st.full_name }}</td>
 					{{ blanks(6) }}
 				</tr>
 				{% endfor %}
