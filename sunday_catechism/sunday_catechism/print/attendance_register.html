@@ -259,15 +259,13 @@
 		<table class="reg">
 			<colgroup>
 				<col style="width: 4%;">    {#- No -#}
-				<col style="width: 6%;">    {#- Adm No -#}
-				<col style="width: 18%;">   {#- Name -#}
+				<col style="width: 24%;">   {#- Name -#}
 				<col><col>  {#- First Meeting: Father's / Mother's signature -#}
 				<col><col>  {#- Second Meeting: Father's / Mother's signature -#}
 			</colgroup>
 			<thead>
 				<tr>
 					<th rowspan="2">No.</th>
-					<th rowspan="2">Adm No.</th>
 					<th rowspan="2">Name of Student</th>
 					<th class="c" colspan="2">First Meeting &mdash; Date: ______________</th>
 					<th class="c" colspan="2">Second Meeting &mdash; Date: ______________</th>
@@ -283,13 +281,12 @@
 				{% for st in reg.students %}
 				<tr>
 					<td class="c">{{ loop.index }}</td>
-					<td class="c">{{ st.admission_no }}</td>
 					<td>{{ st.full_name }}</td>
 					<td></td><td></td><td></td><td></td>
 				</tr>
 				{% endfor %}
 				{% for r in range(reg.students | length + 1, reg.total_rows + 1) %}
-				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(4) }}</tr>
+				<tr><td class="c">{{ r }}</td>{{ blanks(1) }}{{ blanks(4) }}</tr>
 				{% endfor %}
 			</tbody>
 		</table>
@@ -301,14 +298,12 @@
 		<table class="reg">
 			<colgroup>
 				<col style="width: 4%;">    {#- No -#}
-				<col style="width: 6%;">    {#- Adm No -#}
-				<col style="width: 18%;">   {#- Name -#}
+				<col style="width: 24%;">   {#- Name -#}
 				<col><col><col><col><col><col>  {#- 6 write-in columns (share remaining width) -#}
 			</colgroup>
 			<thead>
 				<tr>
 					<th>No.</th>
-					<th>Adm No.</th>
 					<th>Name of Student</th>
 					{% for _ in range(6) %}<th class="writein"></th>{% endfor %}
 				</tr>
@@ -317,13 +312,12 @@
 				{% for st in reg.students %}
 				<tr>
 					<td class="c">{{ loop.index }}</td>
-					<td class="c">{{ st.admission_no }}</td>
 					<td>{{ st.full_name }}</td>
 					{{ blanks(6) }}
 				</tr>
 				{% endfor %}
 				{% for r in range(reg.students | length + 1, reg.total_rows + 1) %}
-				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(6) }}</tr>
+				<tr><td class="c">{{ r }}</td>{{ blanks(1) }}{{ blanks(6) }}</tr>
 				{% endfor %}
 			</tbody>
 		</table>
