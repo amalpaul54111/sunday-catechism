@@ -1,8 +1,10 @@
 # Copyright (c) 2026, amal@zimplify.tech and contributors
 # For license information, please see license.txt
 
-# import frappe
 from frappe.model.document import Document
+
+
+_NAME_FIELDS = ("first_name", "middle_name", "last_name", "baptism_name", "name_of_father", "name_of_mother")
 
 
 class Student(Document):
@@ -33,8 +35,12 @@ class Student(Document):
 	_DOCTYPE_NAME = "Student"
 
 	def validate(self):
-		# Collect all name parts that actually have a value
+		self._normalize_name_casing()
 		name_parts = [self.first_name, self.middle_name, self.last_name]
-
-		# Filter out None or empty strings, then join with a space
 		self.full_name = " ".join([part.strip() for part in name_parts if part])
+
+	def _normalize_name_casing(self):
+		for field in _NAME_FIELDS:
+			value = getattr(self, field, None)
+			if value:
+				setattr(self, field, value.strip().title())
