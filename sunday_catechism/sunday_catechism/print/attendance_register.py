@@ -60,7 +60,7 @@ def _register_context(class_name: str, ay) -> dict:
 	]
 
 	# Width for the "Name of Student" column, sized to the longest name (the fixed table
-	# layout can't auto-size, so we derive it: ~5px/char at the 8px font + padding, clamped).
+	# layout can't auto-size, so we derive it: ~5px/char + padding, clamped).
 	max_name_len = max((len(s["full_name"] or "") for s in students), default=12)
 	name_col_px = min(max(max_name_len, 10), 28) * 5 + 8
 
@@ -77,9 +77,33 @@ def _register_context(class_name: str, ay) -> dict:
 	}
 
 
+def _get_print_settings() -> dict:
+	"""Return Register Print Settings as a plain dict, falling back to defaults."""
+	defaults = {
+		"table_font_size": 10,
+		"vertical_header_font_size": 11,
+		"cover_diocese_font_size": 16,
+		"cover_title_font_size": 22,
+		"cover_class_name_font_size": 56,
+		"cover_class_label_font_size": 18,
+		"cover_teacher_font_size": 30,
+		"cover_teacher_label_font_size": 14,
+		"cover_year_font_size": 20,
+		"sheet_title_font_size": 13,
+	}
+	try:
+		doc = frappe.get_single("Register Print Settings")
+		return {k: int(getattr(doc, k) or v) for k, v in defaults.items()}
+	except Exception:
+		return defaults
+
+
 def _build_register_pdf(class_name: str, ay) -> bytes:
 	"""Render one class's attendance register as a landscape A4 PDF (raw bytes)."""
-	html = frappe.render_template(TEMPLATE, {"registers": [_register_context(class_name, ay)]})
+	html = frappe.render_template(
+		TEMPLATE,
+		{"registers": [_register_context(class_name, ay)], "ps": _get_print_settings()},
+	)
 	return get_pdf(html, {"orientation": "Landscape", "page-size": "A4"})
 
 

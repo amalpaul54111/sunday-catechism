@@ -46,20 +46,20 @@
 		box-shadow: inset 0 0 0 10px #ffffff, inset 0 0 0 13px #c9a45a;
 		padding: 20mm;
 	}
-	.cover .diocese { font-size: 16px; letter-spacing: 3px; color: #8a6d3b; text-transform: uppercase; margin-bottom: 6mm; }
-	.cover .reg-title { font-size: 22px; color: #b23b2e; font-weight: 600; margin-bottom: 14mm; }
-	.cover h1 { font-size: 56px; margin: 0; color: #1f4e79; letter-spacing: 2px; }
-	.cover .class-label { font-size: 18px; color: #555; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 2mm; }
-	.cover .teacher { font-size: 30px; margin-top: 12mm; color: #2e2e2e; }
-	.cover .teacher small { display: block; font-size: 14px; letter-spacing: 3px; color: #888; text-transform: uppercase; margin-bottom: 1mm; }
-	.cover .year { font-size: 20px; margin-top: 10mm; color: #8a6d3b; font-weight: 600; }
+	.cover .diocese { font-size: {{ ps.cover_diocese_font_size }}px; letter-spacing: 3px; color: #8a6d3b; text-transform: uppercase; margin-bottom: 6mm; }
+	.cover .reg-title { font-size: {{ ps.cover_title_font_size }}px; color: #b23b2e; font-weight: 600; margin-bottom: 14mm; }
+	.cover h1 { font-size: {{ ps.cover_class_name_font_size }}px; margin: 0; color: #1f4e79; letter-spacing: 2px; }
+	.cover .class-label { font-size: {{ ps.cover_class_label_font_size }}px; color: #555; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 2mm; }
+	.cover .teacher { font-size: {{ ps.cover_teacher_font_size }}px; margin-top: 12mm; color: #2e2e2e; }
+	.cover .teacher small { display: block; font-size: {{ ps.cover_teacher_label_font_size }}px; letter-spacing: 3px; color: #888; text-transform: uppercase; margin-bottom: 1mm; }
+	.cover .year { font-size: {{ ps.cover_year_font_size }}px; margin-top: 10mm; color: #8a6d3b; font-weight: 600; }
 
 	/* ---- Register tables ---- */
-	.sheet-title { font-size: 13px; font-weight: 600; margin: 0 0 2mm; }
+	.sheet-title { font-size: {{ ps.sheet_title_font_size }}px; font-weight: 600; margin: 0 0 2mm; }
 	.sheet-title small { font-weight: 400; color: #666; }
 
 	/* Sized so up to ~24 students fit on one landscape page with comfortable rows. */
-	table.reg { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10px; }
+	table.reg { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: {{ ps.table_font_size }}px; }
 	table.reg th, table.reg td {
 		border: 1px solid #333;
 		padding: 2px 3px;
@@ -83,7 +83,7 @@
 	SVG because this wkhtmltopdf build supports neither CSS transform nor writing-mode;
 	the SVG renderer honours its own transform. `h` is the cell/label height in px. -#}
 {%- macro vtext(text, h=60) -%}
-	<svg width="14" height="{{ h }}" viewBox="0 0 14 {{ h }}"><text transform="translate(10,{{ h - 3 }}) rotate(-90)" font-size="11" font-family="Arial, sans-serif" fill="#1a1a1a">{{ text }}</text></svg>
+	<svg width="14" height="{{ h }}" viewBox="0 0 14 {{ h }}"><text transform="translate(10,{{ h - 3 }}) rotate(-90)" font-size="{{ ps.vertical_header_font_size }}" font-family="Arial, sans-serif" fill="#1a1a1a">{{ text }}</text></svg>
 {%- endmacro -%}
 
 {#- N empty cells, used to build blank filler rows (for students who join mid-year). -#}

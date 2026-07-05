@@ -1,0 +1,154 @@
+{
+ "actions": [],
+ "creation": "2026-07-05 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "table_section",
+  "table_font_size",
+  "column_break_table",
+  "vertical_header_font_size",
+  "cover_section",
+  "cover_diocese_font_size",
+  "cover_title_font_size",
+  "column_break_cover_1",
+  "cover_class_name_font_size",
+  "cover_class_label_font_size",
+  "cover_teacher_section",
+  "cover_teacher_font_size",
+  "cover_teacher_label_font_size",
+  "column_break_cover_2",
+  "cover_year_font_size",
+  "sheet_title_section",
+  "sheet_title_font_size"
+ ],
+ "fields": [
+  {
+   "fieldname": "table_section",
+   "fieldtype": "Section Break",
+   "label": "Table"
+  },
+  {
+   "default": "10",
+   "description": "Font size (px) for all body and header cells in the register tables.",
+   "fieldname": "table_font_size",
+   "fieldtype": "Int",
+   "label": "Table Text Font Size (px)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_table",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "11",
+   "description": "Font size (px) for vertical column headers (dates, Total Attendance, exam sub-columns).",
+   "fieldname": "vertical_header_font_size",
+   "fieldtype": "Int",
+   "label": "Vertical Header Font Size (px)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cover_section",
+   "fieldtype": "Section Break",
+   "label": "Cover Page"
+  },
+  {
+   "default": "16",
+   "fieldname": "cover_diocese_font_size",
+   "fieldtype": "Int",
+   "label": "Diocese Font Size (px)",
+   "reqd": 1
+  },
+  {
+   "default": "22",
+   "fieldname": "cover_title_font_size",
+   "fieldtype": "Int",
+   "label": "Register Title Font Size (px)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_cover_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "56",
+   "fieldname": "cover_class_name_font_size",
+   "fieldtype": "Int",
+   "label": "Class Name Font Size (px)",
+   "reqd": 1
+  },
+  {
+   "default": "18",
+   "fieldname": "cover_class_label_font_size",
+   "fieldtype": "Int",
+   "label": "Class Label Font Size (px)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cover_teacher_section",
+   "fieldtype": "Section Break",
+   "label": "Cover Page — Teacher & Year"
+  },
+  {
+   "default": "30",
+   "fieldname": "cover_teacher_font_size",
+   "fieldtype": "Int",
+   "label": "Teacher Name Font Size (px)",
+   "reqd": 1
+  },
+  {
+   "default": "14",
+   "fieldname": "cover_teacher_label_font_size",
+   "fieldtype": "Int",
+   "label": "Teacher Label Font Size (px)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_cover_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "20",
+   "fieldname": "cover_year_font_size",
+   "fieldtype": "Int",
+   "label": "Academic Year Font Size (px)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sheet_title_section",
+   "fieldtype": "Section Break",
+   "label": "Sheet Title"
+  },
+  {
+   "default": "13",
+   "fieldname": "sheet_title_font_size",
+   "fieldtype": "Int",
+   "label": "Sheet Title Font Size (px)",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-07-05 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Sunday Catechism",
+ "name": "Register Print Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
