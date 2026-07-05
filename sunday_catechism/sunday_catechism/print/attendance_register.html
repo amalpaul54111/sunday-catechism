@@ -85,15 +85,18 @@
 	the SVG renderer honours its own transform.
 
 	The SVG must be tall enough to hold the whole string along its (rotated) baseline,
-	or the far end of the label is clipped off the top. The height is therefore budgeted
-	from the character count — ~0.58em per glyph (generous, since wkhtmltopdf resolves
-	"Arial" to a wider substitute font) plus one em of top/bottom padding — and scales
-	with the font size, so neither a longer label nor a larger font is ever clipped.
-	Width = fs+4 with translate-x = fs so the full em-ascent across the baseline fits too. -#}
+	or the far end of the label is clipped off the top. The height is budgeted with a
+	linear model — ~0.48em per glyph plus a ~1.25em base (the base covers the wider
+	glyphs that dominate short, dense labels like "Academics") and 4px of breathing
+	room — which tracks the real string width far better than a flat per-char factor,
+	so a long-but-sparse label like "Total Attendance" stays snug instead of over-tall
+	while short dense ones still fit. It scales with the font size, so neither a longer
+	label nor a larger font is ever clipped. Width = fs+4 with translate-x = fs so the
+	full em-ascent across the baseline fits too. -#}
 {%- macro vtext(text) -%}
 {%- set fs = ps.vertical_header_font_size -%}
 {%- set svgw = fs + 4 -%}
-{%- set svgh = (text | length * fs * 0.58 + fs) | round(0, 'ceil') | int -%}
+{%- set svgh = (text | length * fs * 0.48 + fs * 1.25 + 4) | round(0, 'ceil') | int -%}
 	<svg width="{{ svgw }}" height="{{ svgh }}" viewBox="0 0 {{ svgw }} {{ svgh }}"><text transform="translate({{ fs }},{{ svgh - 3 }}) rotate(-90)" font-size="{{ fs }}" font-family="Arial, sans-serif" fill="#1a1a1a">{{ text }}</text></svg>
 {%- endmacro -%}
 

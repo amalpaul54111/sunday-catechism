@@ -14,7 +14,8 @@ TEMPLATE = "sunday_catechism/sunday_catechism/print/attendance_register.html"
 
 # Maximum data rows that fit on one landscape A4 page at default settings.
 # A4 landscape = 210 mm; margins 8 mm top + bottom = 16 mm; sheet title ≈ 7 mm;
-# two-row register header (tallest vtext h=88) ≈ 27 mm → 160 mm left for rows.
+# two-row register header (tallest vtext label "Total Attendance" ≈ 103 px ≈ 27 mm
+# at the default 11 px vertical-header font) + title ≈ 34 mm → ~160 mm left for rows.
 # Row height is fixed at 6.5 mm in CSS and does not scale with font-size.
 _PAGE_ROWS = int((210.0 - 16.0 - 34.0) / 6.5)  # → 24
 
