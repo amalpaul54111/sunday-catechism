@@ -61,11 +61,6 @@ def _register_context(class_name: str, ay, student_order: str = "Admission Numbe
 		{"label": "Term 2", "sundays": term_2_sundays, "exam": "Final Exam", "is_last": True},
 	]
 
-	# Width for the "Name of Student" column, sized to the longest name (the fixed table
-	# layout can't auto-size, so we derive it: ~5px/char + padding, clamped).
-	max_name_len = max((len(s["full_name"] or "") for s in students), default=12)
-	name_col_px = min(max(max_name_len, 10), 28) * 5 + 8
-
 	return {
 		"class_name": class_name,
 		"teacher": teacher or "",
@@ -74,7 +69,6 @@ def _register_context(class_name: str, ay, student_order: str = "Admission Numbe
 		"sundays": sundays,
 		"terms": terms,
 		"internal_pages": chunk_sundays(sundays),
-		"name_col_px": name_col_px,
 		"total_rows": len(students) + 2,
 	}
 

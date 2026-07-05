@@ -165,7 +165,7 @@
 	   Term 1 End Date). Each page lists every student against the Sundays of that term, a
 	   Total Attendance column and that term's exam block (Marks / Internal / Total). The
 	   final term also carries the year-end summary (Total Marks / Pass-Fail). Sunday and
-	   exam columns are left unsized so they share the width left by the No/Adm/Name stub. -#}
+	   exam columns are left unsized so they share the width left by the No/Name stub. -#}
 	{% for term in reg.terms %}
 	{%- set narrow = (term.sundays | length) + 4 + (2 if term.is_last else 0) -%}
 	<div class="page">
@@ -173,8 +173,7 @@
 		<table class="reg">
 			<colgroup>
 				<col style="width: 3%;">    {#- No -#}
-				<col style="width: 5%;">    {#- Adm No -#}
-				<col style="width: 14%;">   {#- Name -#}
+				<col style="width: 19%;">   {#- Name -#}
 				{% for s in term.sundays %}<col>{% endfor %}
 				<col>            {#- Total Attendance -#}
 				<col><col><col>  {#- Exam: Marks / Internal / Total -#}
@@ -183,7 +182,6 @@
 			<thead>
 				<tr>
 					<th rowspan="2">No.</th>
-					<th rowspan="2">Adm No.</th>
 					<th rowspan="2">Name of Student</th>
 					{% for s in term.sundays %}<th class="sun" rowspan="2">{{ vtext(frappe.utils.formatdate(s, "d-MMM-yy")) }}</th>{% endfor %}
 					<th class="sun" rowspan="2">{{ vtext("Total Attendance", h=88) }}</th>
@@ -203,13 +201,12 @@
 				{% for st in reg.students %}
 				<tr>
 					<td class="c">{{ loop.index }}</td>
-					<td class="c">{{ st.admission_no }}</td>
 					<td>{{ st.full_name }}</td>
 					{{ blanks(narrow) }}
 				</tr>
 				{% endfor %}
 				{% for r in range(reg.students | length + 1, reg.total_rows + 1) %}
-				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(narrow) }}</tr>
+				<tr><td class="c">{{ r }}</td>{{ blanks(1) }}{{ blanks(narrow) }}</tr>
 				{% endfor %}
 			</tbody>
 		</table>
@@ -222,15 +219,13 @@
 		<div class="sheet-title">Internals &mdash; {{ pg.label }} <small>&middot; {{ reg.class_name }} &middot; {{ reg.academic_year }}</small></div>
 		<table class="reg">
 			<colgroup>
-				<col style="width: 3%;">                  {#- No -#}
-				<col style="width: 5%;">                  {#- Adm No -#}
-				<col style="width: {{ reg.name_col_px }}px;"> {#- Name (sized to longest name) -#}
+				<col style="width: 3%;">    {#- No -#}
+				<col style="width: 19%;">   {#- Name -#}
 				{% for s in pg.sundays %}<col><col><col>{% endfor %}
 			</colgroup>
 			<thead>
 				<tr>
 					<th rowspan="2">No.</th>
-					<th rowspan="2">Adm No.</th>
 					<th rowspan="2">Name of Student</th>
 					{% for s in pg.sundays %}<th class="c" colspan="3">{{ frappe.utils.formatdate(s, "d-MMM-yy") }}</th>{% endfor %}
 				</tr>
@@ -246,13 +241,12 @@
 				{% for st in reg.students %}
 				<tr>
 					<td class="c">{{ loop.index }}</td>
-					<td class="c">{{ st.admission_no }}</td>
 					<td>{{ st.full_name }}</td>
 					{% for s in pg.sundays %}<td></td><td></td><td></td>{% endfor %}
 				</tr>
 				{% endfor %}
 				{% for r in range(reg.students | length + 1, reg.total_rows + 1) %}
-				<tr><td class="c">{{ r }}</td>{{ blanks(2) }}{{ blanks(pg.sundays | length * 3) }}</tr>
+				<tr><td class="c">{{ r }}</td>{{ blanks(1) }}{{ blanks(pg.sundays | length * 3) }}</tr>
 				{% endfor %}
 			</tbody>
 		</table>
