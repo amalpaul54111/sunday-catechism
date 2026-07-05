@@ -4,6 +4,8 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "student_order_section",
+  "student_order",
   "table_section",
   "table_font_size",
   "column_break_table",
@@ -23,6 +25,20 @@
   "sheet_title_font_size"
  ],
  "fields": [
+  {
+   "fieldname": "student_order_section",
+   "fieldtype": "Section Break",
+   "label": "Student Order"
+  },
+  {
+   "default": "Admission Number",
+   "description": "How students are ordered in each printed register.",
+   "fieldname": "student_order",
+   "fieldtype": "Select",
+   "label": "Order Students By",
+   "options": "Admission Number\nFull Name",
+   "reqd": 1
+  },
   {
    "fieldname": "table_section",
    "fieldtype": "Section Break",

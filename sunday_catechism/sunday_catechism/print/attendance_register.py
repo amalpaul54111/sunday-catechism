@@ -17,7 +17,13 @@ TEMPLATE = "sunday_catechism/sunday_catechism/print/attendance_register.html"
 TARGET_ROWS = 24
 
 
-def _register_context(class_name: str, ay) -> dict:
+_ORDER_BY = {
+	"Admission Number": "admission_no asc",
+	"Full Name": "full_name asc",
+}
+
+
+def _register_context(class_name: str, ay, student_order: str = "Admission Number") -> dict:
 	"""Build the template context for one class's attendance register.
 
 	Sections: a decorative cover page, an attendance master sheet (one row per active
@@ -41,7 +47,7 @@ def _register_context(class_name: str, ay) -> dict:
 			"baptism_name",
 			"date_of_baptism",
 		],
-		order_by="admission_no asc",
+		order_by=_ORDER_BY.get(student_order, "admission_no asc"),
 	)
 
 	# Strip country codes from phone numbers for printing.
@@ -79,7 +85,7 @@ def _register_context(class_name: str, ay) -> dict:
 
 def _get_print_settings() -> dict:
 	"""Return Register Print Settings as a plain dict, falling back to defaults."""
-	defaults = {
+	int_defaults = {
 		"table_font_size": 10,
 		"vertical_header_font_size": 11,
 		"cover_diocese_font_size": 16,
@@ -93,16 +99,19 @@ def _get_print_settings() -> dict:
 	}
 	try:
 		doc = frappe.get_single("Register Print Settings")
-		return {k: int(getattr(doc, k) or v) for k, v in defaults.items()}
+		settings = {k: int(getattr(doc, k) or v) for k, v in int_defaults.items()}
+		settings["student_order"] = doc.student_order or "Admission Number"
+		return settings
 	except Exception:
-		return defaults
+		return {**int_defaults, "student_order": "Admission Number"}
 
 
 def _build_register_pdf(class_name: str, ay) -> bytes:
 	"""Render one class's attendance register as a landscape A4 PDF (raw bytes)."""
+	ps = _get_print_settings()
 	html = frappe.render_template(
 		TEMPLATE,
-		{"registers": [_register_context(class_name, ay)], "ps": _get_print_settings()},
+		{"registers": [_register_context(class_name, ay, ps["student_order"])], "ps": ps},
 	)
 	return get_pdf(html, {"orientation": "Landscape", "page-size": "A4"})
 

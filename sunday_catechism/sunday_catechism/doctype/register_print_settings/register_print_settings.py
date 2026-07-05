@@ -21,6 +21,7 @@ class RegisterPrintSettings(Document):
 		cover_title_font_size: DF.Int
 		cover_year_font_size: DF.Int
 		sheet_title_font_size: DF.Int
+		student_order: DF.Literal["Admission Number", "Full Name"]
 		table_font_size: DF.Int
 		vertical_header_font_size: DF.Int
 	# end: auto-generated types
