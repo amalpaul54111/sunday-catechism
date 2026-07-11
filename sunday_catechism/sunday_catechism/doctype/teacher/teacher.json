@@ -8,6 +8,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "is_active",
   "full_name",
   "fathers_or_husbands_name",
   "marital_status",
@@ -28,9 +29,14 @@
  ],
  "fields": [
   {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
    "fieldname": "full_name",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Name",
    "reqd": 1,
    "unique": 1
@@ -145,6 +151,5 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": [],
- "title_field": "full_name"
+ "states": []
 }
