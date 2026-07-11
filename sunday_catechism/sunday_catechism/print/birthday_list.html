@@ -1,0 +1,69 @@
+{#
+	Grouped-by-week student birthday list. Rendered to PDF by
+	sunday_catechism.sunday_catechism.print.birthday_list.generate_birthday_list.
+	Context: year, class_name, weeks=[{label, students:[{birthday_display, full_name, student_class}]}]
+#}
+<style>
+	.birthday-list { font-family: "Helvetica Neue", Arial, sans-serif; color: #2d2d2d; }
+	.birthday-list h1 { font-size: 20px; text-align: center; margin: 0; }
+	.birthday-list .subtitle { text-align: center; color: #777; font-size: 12px; margin: 2px 0 18px; }
+	.birthday-list .empty { text-align: center; color: #999; font-size: 13px; margin-top: 40px; }
+	.birthday-list .week { margin-bottom: 16px; page-break-inside: avoid; }
+	.birthday-list .week-header {
+		background: #f3f4f6;
+		border-left: 4px solid #c0392b;
+		padding: 6px 10px;
+		font-size: 13px;
+		font-weight: 600;
+	}
+	.birthday-list .week-header .count { font-weight: 400; color: #777; }
+	.birthday-list table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+	.birthday-list th, .birthday-list td {
+		border: 1px solid #ddd;
+		padding: 5px 8px;
+		font-size: 12px;
+		text-align: left;
+		vertical-align: top;
+	}
+	.birthday-list th { background: #fafafa; font-weight: 600; }
+	.birthday-list td.bday { white-space: nowrap; width: 130px; }
+	.birthday-list td.cls { width: 160px; }
+</style>
+
+<div class="birthday-list">
+	<h1>Student Birthdays</h1>
+	<div class="subtitle">
+		{{ year }}{% if class_name %} &middot; {{ class_name }}{% endif %}
+	</div>
+
+	{% if not weeks %}
+		<p class="empty">No student birthdays found.</p>
+	{% endif %}
+
+	{% for week in weeks %}
+	<div class="week">
+		<div class="week-header">
+			Week of {{ week.label }}
+			<span class="count">({{ week.students | length }})</span>
+		</div>
+		<table>
+			<thead>
+				<tr>
+					<th class="bday">Birthday</th>
+					<th>Student</th>
+					<th class="cls">Class</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for s in week.students %}
+				<tr>
+					<td class="bday">{{ s.birthday_display }}</td>
+					<td>{{ s.full_name }}</td>
+					<td class="cls">{{ s.student_class or "" }}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	{% endfor %}
+</div>

@@ -2,7 +2,7 @@ import calendar
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, getdate
+from frappe.utils import getdate
 
 
 def execute(filters=None):
@@ -30,22 +30,15 @@ def execute(filters=None):
 		if month == 2 and day == 29 and not is_leap:
 			month, day = 3, 1
 		birthday = getdate(f"{year}-{month:02d}-{day:02d}")
-		# date.weekday(): Monday=0 .. Sunday=6
-		week_start = add_days(birthday, -birthday.weekday())
-		week_end = add_days(week_start, 6)
 		data.append(
 			{
-				"week_start": week_start,
-				"week_end": week_end,
 				"birthday": birthday,
 				"full_name": s.full_name,
-				"admission_no": s.admission_no,
 				"student_class": s.get("class"),
-				"date_of_birth": dob,
 			}
 		)
 
-	# Order chronologically by the birthday's week, then by the birthday itself.
+	# Order chronologically by the birthday.
 	data.sort(key=lambda r: (r["birthday"], r["full_name"] or ""))
 
 	return get_columns(), data
@@ -53,18 +46,6 @@ def execute(filters=None):
 
 def get_columns():
 	return [
-		{
-			"fieldname": "week_start",
-			"label": _("Week Start (Mon)"),
-			"fieldtype": "Date",
-			"width": 130,
-		},
-		{
-			"fieldname": "week_end",
-			"label": _("Week End (Sun)"),
-			"fieldtype": "Date",
-			"width": 130,
-		},
 		{
 			"fieldname": "birthday",
 			"label": _("Birthday"),
@@ -78,23 +59,10 @@ def get_columns():
 			"width": 200,
 		},
 		{
-			"fieldname": "admission_no",
-			"label": _("Admission No"),
-			"fieldtype": "Link",
-			"options": "Student",
-			"width": 120,
-		},
-		{
 			"fieldname": "student_class",
 			"label": _("Class"),
 			"fieldtype": "Link",
 			"options": "Class",
 			"width": 150,
-		},
-		{
-			"fieldname": "date_of_birth",
-			"label": _("Date of Birth"),
-			"fieldtype": "Date",
-			"width": 110,
 		},
 	]
