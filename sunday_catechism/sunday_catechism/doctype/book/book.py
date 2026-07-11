@@ -7,6 +7,28 @@ from frappe.model.document import Document
 
 
 class Book(Document):
+	# begin: auto-generated types
+	# This code is auto-generated. Do not modify anything in this block.
+
+	from typing import TYPE_CHECKING
+
+	if TYPE_CHECKING:
+		from frappe.types import DF
+		from sunday_catechism.sunday_catechism.doctype.book_copy.book_copy import BookCopy
+
+		author: DF.Data
+		available_copies: DF.Int
+		category: DF.Link | None
+		copies: DF.Table[BookCopy]
+		cover_image: DF.AttachImage | None
+		isbn: DF.Data | None
+		next_copy_seq: DF.Int
+		publisher: DF.Data | None
+		title: DF.Data
+		total_copies: DF.Int
+		year_published: DF.Int
+	# end: auto-generated types
+
 	_DOCTYPE_NAME = "Book"
 
 	def validate(self):

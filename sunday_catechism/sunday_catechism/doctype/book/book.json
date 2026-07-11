@@ -2,7 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "autoname": "format:LIB-BOOK-{#####}",
- "creation": "2026-07-11 00:00:00.000000",
+ "creation": "2026-07-11 00:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -119,10 +119,11 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-11 00:00:00.000000",
+ "modified": "2026-07-11 16:48:30.152985",
  "modified_by": "Administrator",
  "module": "Sunday Catechism",
  "name": "Book",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
