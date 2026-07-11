@@ -1,0 +1,62 @@
+{
+ "app": "sunday_catechism",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "graduation-cap",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "home",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Home",
+   "link_to": "Sunday Catechism",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "graduation-cap",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Student",
+   "link_to": "Student",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "book",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Class",
+   "link_to": "Class",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "user",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Teacher",
+   "link_to": "Teacher",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "module": "Sunday Catechism",
+ "name": "Sunday Catechism",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Sunday Catechism"
+}

@@ -1,0 +1,37 @@
+{
+ "based_on": "",
+ "chart_name": "Students by Class",
+ "chart_type": "Report",
+ "currency": "",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "document_type": "",
+ "dynamic_filters_json": "[]",
+ "filters_json": "[]",
+ "group_by_based_on": "",
+ "group_by_type": "",
+ "idx": 0,
+ "is_public": 0,
+ "is_standard": 1,
+ "module": "Sunday Catechism",
+ "name": "Students by Class",
+ "number_of_groups": 0,
+ "parent_document_type": "",
+ "report_name": "Students by Class",
+ "roles": [],
+ "show_values_over_chart": 1,
+ "source": "",
+ "time_interval": "Yearly",
+ "timeseries": 0,
+ "timespan": "Last Year",
+ "type": "Bar",
+ "use_report_chart": 0,
+ "value_based_on": "",
+ "x_field": "class_no",
+ "y_axis": [
+  {
+   "color": "#2490EF",
+   "y_field": "students"
+  }
+ ]
+}

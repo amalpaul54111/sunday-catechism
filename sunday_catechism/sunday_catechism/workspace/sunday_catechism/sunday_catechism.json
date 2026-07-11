@@ -1,0 +1,70 @@
+{
+ "app": "sunday_catechism",
+ "charts": [
+  {
+   "chart_name": "Students by Class",
+   "label": "Students by Class"
+  }
+ ],
+ "content": "[{\"id\":\"sc_hdr_stu01\",\"type\":\"header\",\"data\":{\"text\":\"Sunday Catechism\",\"col\":12}},{\"id\":\"sc_nc_totstu\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Students\",\"col\":4}},{\"id\":\"sc_nc_totchr\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Teachers\",\"col\":4}},{\"id\":\"sc_spacer_01\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"sc_chrt_stcls\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Students by Class\",\"col\":12}},{\"id\":\"sc_spacer_02\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"sc_hdr_links1\",\"type\":\"header\",\"data\":{\"text\":\"Quick Links\",\"col\":12}},{\"id\":\"sc_sc_stulist\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student List\",\"col\":4}},{\"id\":\"sc_sc_clslist\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Class List\",\"col\":4}},{\"id\":\"sc_sc_tchlist\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Teacher List\",\"col\":4}}]",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "external_link": "",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "graduation-cap",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Sunday Catechism",
+ "link_to": "",
+ "link_type": "",
+ "links": [],
+ "module": "Sunday Catechism",
+ "name": "Sunday Catechism",
+ "number_cards": [
+  {
+   "label": "Total Students",
+   "number_card_name": "Total Students"
+  },
+  {
+   "label": "Total Teachers",
+   "number_card_name": "Total Teachers"
+  }
+ ],
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [],
+ "sequence_id": 0.5,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "format": "{} Active",
+   "label": "Student List",
+   "link_to": "Student",
+   "stats_filter": "[[\"Student\",\"active\",\"=\",1]]",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Class List",
+   "link_to": "Class",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Teacher List",
+   "link_to": "Teacher",
+   "stats_filter": "[]",
+   "type": "DocType"
+  }
+ ],
+ "title": "Sunday Catechism",
+ "type": "Workspace"
+}

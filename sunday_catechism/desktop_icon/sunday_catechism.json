@@ -1,0 +1,17 @@
+{
+ "app": "sunday_catechism",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon": "graduation-cap",
+ "icon_type": "Link",
+ "idx": 0,
+ "label": "Sunday Catechism",
+ "link_to": "Sunday Catechism",
+ "link_type": "Workspace Sidebar",
+ "name": "Sunday Catechism",
+ "owner": "Administrator",
+ "restrict_removal": 0,
+ "roles": [],
+ "standard": 1
+}
