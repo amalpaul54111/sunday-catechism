@@ -1,0 +1,56 @@
+{
+ "app": "sunday_catechism",
+ "creation": "2026-07-11 16:51:40.264209",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "book",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "home",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Home",
+   "link_to": "Library",
+   "link_type": "Workspace",
+   "open_in_new_tab": 1,
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "book",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Book",
+   "link_to": "Book",
+   "link_type": "DocType",
+   "open_in_new_tab": 1,
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "tag",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Book Category",
+   "link_to": "Book Category",
+   "link_type": "DocType",
+   "open_in_new_tab": 1,
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-07-11 16:51:40.264209",
+ "modified_by": "Administrator",
+ "module": "Sunday Catechism",
+ "name": "Library",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Library"
+}

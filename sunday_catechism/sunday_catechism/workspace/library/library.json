@@ -1,0 +1,52 @@
+{
+ "app": "sunday_catechism",
+ "charts": [],
+ "content": "[{\"id\": \"lib_hdr_lib01\", \"type\": \"header\", \"data\": {\"text\": \"Library\", \"col\": 12}}, {\"id\": \"lib_nc_totbks\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Total Books\", \"col\": 4}}, {\"id\": \"lib_spacer_01\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"lib_hdr_links1\", \"type\": \"header\", \"data\": {\"text\": \"Quick Links\", \"col\": 12}}, {\"id\": \"lib_sc_booklist\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Book List\", \"col\": 4}}, {\"id\": \"lib_sc_catlist\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Book Category List\", \"col\": 4}}]",
+ "creation": "2026-07-11 16:51:40.177769",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "hide_custom": 0,
+ "icon": "book",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Library",
+ "link_type": "DocType",
+ "links": [],
+ "modified": "2026-07-11 16:51:40.177769",
+ "modified_by": "Administrator",
+ "module": "Sunday Catechism",
+ "name": "Library",
+ "number_cards": [
+  {
+   "label": "Total Books",
+   "number_card_name": "Total Books"
+  }
+ ],
+ "owner": "Administrator",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 0.6,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Book List",
+   "link_to": "Book",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Book Category List",
+   "link_to": "Book Category",
+   "stats_filter": "[]",
+   "type": "DocType"
+  }
+ ],
+ "title": "Library",
+ "type": "Workspace"
+}
