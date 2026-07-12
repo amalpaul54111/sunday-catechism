@@ -7,6 +7,7 @@
   }
  ],
  "content": "[{\"id\":\"sc_hdr_stu01\",\"type\":\"header\",\"data\":{\"text\":\"Sunday Catechism\",\"col\":12}},{\"id\":\"sc_nc_totstu\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Students\",\"col\":4}},{\"id\":\"sc_nc_totchr\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Teachers\",\"col\":4}},{\"id\":\"sc_spacer_01\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"sc_chrt_stcls\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Students by Class\",\"col\":12}},{\"id\":\"sc_spacer_02\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"sc_hdr_links1\",\"type\":\"header\",\"data\":{\"text\":\"Quick Links\",\"col\":12}},{\"id\":\"sc_sc_stulist\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student List\",\"col\":4}},{\"id\":\"sc_sc_clslist\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Class List\",\"col\":4}},{\"id\":\"sc_sc_tchlist\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Teacher List\",\"col\":4}}]",
+ "creation": "2026-07-11 22:01:11.520037",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -20,6 +21,8 @@
  "link_to": "",
  "link_type": "",
  "links": [],
+ "modified": "2026-07-11 22:14:35.238609",
+ "modified_by": "Administrator",
  "module": "Sunday Catechism",
  "name": "Sunday Catechism",
  "number_cards": [
@@ -32,6 +35,7 @@
    "number_card_name": "Total Teachers"
   }
  ],
+ "owner": "Administrator",
  "parent_page": "",
  "public": 1,
  "quick_lists": [],

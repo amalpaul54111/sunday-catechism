@@ -14,7 +14,7 @@ class Book(Document):
 
 	if TYPE_CHECKING:
 		from frappe.types import DF
-		from sunday_catechism.sunday_catechism.doctype.book_copy.book_copy import BookCopy
+		from sunday_catechism.library.doctype.book_copy.book_copy import BookCopy
 
 		author: DF.Data
 		available_copies: DF.Int

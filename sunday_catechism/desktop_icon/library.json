@@ -1,0 +1,21 @@
+{
+ "app": "sunday_catechism",
+ "bg_color": "gray",
+ "creation": "2026-07-11 22:25:08.321351",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon": "book",
+ "icon_type": "Link",
+ "idx": 0,
+ "label": "Library",
+ "link_to": "Library",
+ "link_type": "Workspace Sidebar",
+ "modified": "2026-07-12 13:04:46.385819",
+ "modified_by": "Administrator",
+ "name": "Library",
+ "owner": "Administrator",
+ "restrict_removal": 0,
+ "roles": [],
+ "standard": 1
+}

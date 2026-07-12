@@ -14,7 +14,7 @@
  "label": "Total Books",
  "modified": "2026-07-11 16:51:39.883958",
  "modified_by": "Administrator",
- "module": "Sunday Catechism",
+ "module": "Library",
  "name": "Total Books",
  "owner": "Administrator",
  "report_function": "Sum",
